@@ -3675,62 +3675,32 @@
             return mergeCineDataSegments(segments);
         }
         
-        // Enhanced data fetching with IndexedDB caching
-        async function fetchData() {
-            let db;
+        // Refactored data fetching to use the new PHP backend API
+        async function fetchData(apiUrl = 'api/playlist.php') {
+            elements.progressBarContainer.style.display = 'block';
+            elements.loadingSpinner.style.display = 'block';
+            elements.progressBarText.textContent = 'Fetching latest content from server...';
+
             try {
-                db = await dbUtil.open();
-                const cachedData = await dbUtil.get(db, PLAYLIST_KEY);
-
-                if (cachedData) {
-                    cineData = cachedData;
-                    console.log("✅ Loaded data from IndexedDB cache");
-                    return; // Exit early if we have cached data
+                // Add a cache-busting parameter
+                const url = new URL(apiUrl, window.location.origin);
+                url.searchParams.set('t', new Date().getTime());
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok: ${response.statusText}`);
                 }
 
-                console.log("ℹ️ No cache found in IndexedDB. Fetching from network...");
-                elements.progressBarContainer.style.display = 'block';
-                elements.loadingSpinner.style.display = 'none';
-                
-                const primaryUrl = "https://github.com/MovieAddict88/Movie-Source/raw/main/playlist.json";
-                const fallbackUrls = [
-                    "https://raw.githubusercontent.com/MovieAddict88/Movie-Source/main/playlist.json",
-                    "https://cdn.jsdelivr.net/gh/MovieAddict88/Movie-Source@main/playlist.json",
-                    "./playlist.json",
-                    "./data/playlist.json"
-                ];
-                
-                const allCandidateUrls = [primaryUrl, ...fallbackUrls];
-                for (const candidate of allCandidateUrls) {
-                    try {
-                        console.log(`🔎 Trying segmented playlists from: ${getBasePathFromUrl(candidate)}`);
-                        const segmented = await tryFetchSegmented(candidate);
-                        if (segmented && segmented.Categories && segmented.Categories.length > 0) {
-                            cineData = segmented;
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached segmented data from base: ${getBasePathFromUrl(candidate)}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Segmented fetch failed for ${candidate}`, err);
-                    }
-                    try {
-                        console.log(`🔄 Trying monolithic playlist: ${candidate}`);
-                        elements.progressBarText.textContent = `Trying monolithic playlist...`;
-                        const response = await fetch(withCacheBuster(candidate));
-                        if (response.ok) {
-                            cineData = await response.json();
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached data from: ${candidate}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Monolithic fetch failed for ${candidate}`, err);
-                    }
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(`API Error: ${data.error}`);
                 }
-                
-                throw new Error("All data sources failed");
-                
+
+                cineData = data;
+                console.log("✅ Loaded data successfully from the new PHP API.");
+
             } catch (err) {
                 console.error("❌ All data sources failed:", err);
                 
@@ -3749,7 +3719,7 @@
                 `;
                 errorMessage.innerHTML = `
                     <h3>⚠️ Data Loading Failed</h3>
-                    <p>Unable to load content data. Please check your internet connection and try again.</p>
+                    <p>Unable to load content from the server. Please check your connection and ensure the backend is running correctly.</p>
                     <button onclick="this.parentElement.remove(); window.location.reload();" style="
                         background: var(--primary);
                         color: white;
@@ -3762,7 +3732,6 @@
                 `;
                 document.body.appendChild(errorMessage);
             } finally {
-                if (db) db.close();
                 elements.progressBarContainer.style.display = 'none';
                 elements.loadingSpinner.style.display = 'none';
             }
@@ -3939,58 +3908,41 @@
             });
         }
         
-        // Render content based on filters
+        // Render content based on filters by calling the backend API
         async function renderContent(category = 'all') {
-            if (!cineData || !cineData.Categories) return;
-
             const filtersSection = document.querySelector('.filters-section');
+            filtersSection.style.display = 'block';
 
-            // Reset pagination
+            // Reset pagination and content
             currentPage = 1;
             currentContent = [];
 
-            if (category === 'watch-later') {
-                filtersSection.style.display = 'none'; // Hide filters for Watch Later
-                const db = await watchLaterDbUtil.open();
-                const watchLaterItems = await watchLaterDbUtil.getAll(db);
-                db.close();
-                currentContent = watchLaterItems.map(item => ({ ...item, type: item.type || 'movie' }));
-
-                totalPages = Math.ceil(currentContent.length / ITEMS_PER_PAGE);
-                cachedContent = [...currentContent];
-                currentView = 'watch-later'; // Set the view
-                renderCurrentView();
-                renderPaginationControls();
-                setupLazyLoading();
-                return;
-            } else {
-                const icon = elements.viewToggleBtn.querySelector('i');
-                if (icon.classList.contains('fa-list')) {
-                    currentView = 'list';
-                } else {
-                    currentView = 'grid';
-                }
-                filtersSection.style.display = 'block'; // Show filters for other categories
-            }
-
-            // Get selected category
-            const genre = elements.genreFilter.value.toLowerCase();
-            const country = elements.countryFilter.value.toLowerCase();
+            // Get filter values
+            const genre = elements.genreFilter.value;
+            const country = elements.countryFilter.value;
             const year = elements.yearFilter.value;
-            const sortBy = elements.sortFilter.value;
+            const sortBy = elements.sortFilter.value; // Sorting will be handled client-side for now
 
-            // Filter content
+            // Build API URL with query parameters
+            const params = new URLSearchParams();
+            if (genre !== 'all') params.append('genre', genre);
+            if (country !== 'all') params.append('country', country);
+            if (year !== 'all') params.append('year', year);
+            // The 'category' (movie/series/live) will be filtered client-side from the full dataset
+            // for simplicity, but a more advanced version could pass this to the API too.
+
+            const apiUrl = `api/playlist.php?${params.toString()}`;
+
+            // Fetch data with the new filters
+            await fetchData(apiUrl);
+
+            if (!cineData || !cineData.Categories) return;
+
+            // Client-side filtering for main category (Movies, Series, etc.)
             cineData.Categories.forEach(cat => {
                 if (category === 'all' || cat.MainCategory.toLowerCase().includes(category)) {
                     cat.Entries.forEach(entry => {
-                        // Check genre and country filters
-                        const genreMatch = genre === 'all' ||
-                            (entry.SubCategory && entry.SubCategory.toLowerCase().includes(genre));
-                        const countryMatch = country === 'all' ||
-                            (entry.Country && entry.Country.toLowerCase().includes(country));
-                        const yearMatch = year === 'all' || (entry.Year && entry.Year.toString() === year);
-
-                        if (genreMatch && countryMatch && yearMatch && isContentAllowed(entry)) {
+                        if (isContentAllowed(entry)) {
                             currentContent.push({
                                 ...entry,
                                 type: cat.MainCategory.toLowerCase().includes('movie') ? 'movie' :
@@ -4001,27 +3953,14 @@
                 }
             });
 
-            // Shuffle content on initial load
-            if (isInitialLoad) {
-                currentContent = shuffleArray(currentContent);
-                isInitialLoad = false;
-            }
-            // Apply sorting if not initial load
-            else {
-                currentContent = sortContent(currentContent, sortBy);
-            }
+            // Apply sorting
+            currentContent = sortContent(currentContent, sortBy);
 
-            // Calculate total pages
+            // Update cache and render
             totalPages = Math.ceil(currentContent.length / ITEMS_PER_PAGE);
-
-            // Cache filtered content
             cachedContent = [...currentContent];
-
-            // Render content
             renderCurrentView();
             renderPaginationControls();
-
-            // Re-initialize lazy loading for the new content
             setupLazyLoading();
         }
 
@@ -4693,10 +4632,8 @@
                     const video = elements.player;
                     const player = new shaka.Player(video);
                     
-                    // Store reference to current player
                     window.currentShakaPlayer = player;
                     
-                    // Add error event listener
                     player.addEventListener('error', (event) => {
                         console.error('Shaka Player Error:', event.detail);
                         elements.playerMessageArea.textContent = `Error: ${event.detail.message}`;
@@ -4704,52 +4641,28 @@
                         reject(new Error(event.detail.message));
                     });
                     
-                    // Add loaded event listener
                     player.addEventListener('loaded', () => {
                         console.log('✅ MPD stream loaded successfully with Shaka Player');
                         showPlayingStatus('MPD Stream', 'Loaded Successfully');
                     });
                     
-                    // Configure DRM if servers have DRM information
-                    if (servers && servers.length > 0) {
-                        const drmServer = servers.find(s => s.drm || s.license || s.key || s.keyId);
-                        
-                        if (drmServer) {
-                            console.log('🔒 Configuring DRM for channel:', drmServer.name || 'Unknown');
-                            
-                            if (drmServer.license && drmServer.license.includes(':')) {
-                                // ClearKey DRM (like in shaka.html)
-                                const [keyId, key] = drmServer.license.split(':');
-                                const drmConfiguration = {
-                                    servers: {
-                                        'com.widevine.alpha': 'https://qp-pldt-live-grp-02-prod.akamaized.net/proxy/widevine'
-                                    },
-                                    clearKeys: {
-                                        [keyId]: key
-                                    }
-                                };
-                                player.configure({ drm: drmConfiguration });
-                                console.log('✅ ClearKey DRM configured');
-                            } else if (drmServer.license) {
-                                // License server DRM
-                                const drmConfiguration = {
-                                    servers: {
-                                        'com.widevine.alpha': drmServer.license
-                                    }
-                                };
-                                player.configure({ drm: drmConfiguration });
-                                console.log('✅ License server DRM configured');
+                    // Configure DRM using the drm_license_url from the server data
+                    const currentServer = servers.find(s => s.url === url);
+                    if (currentServer && currentServer.drm_license_url) {
+                        console.log('🔒 Configuring DRM with license URL:', currentServer.drm_license_url);
+                        player.configure({
+                            drm: {
+                                servers: {
+                                    'com.widevine.alpha': currentServer.drm_license_url
+                                    // You can add other DRM systems like PlayReady here if needed
+                                }
                             }
-                        } else {
-                            console.log('ℹ️ No DRM configuration needed');
-                            player.configure({ drm: null }); // Clear DRM for non-protected streams
-                        }
+                        });
                     } else {
-                        console.log('ℹ️ No server information, treating as non-DRM');
-                        player.configure({ drm: null });
+                         console.log('ℹ️ No DRM license URL found for this server. Playing clear stream.');
+                         player.configure({ drm: { clearKeys: {} } }); // Play clear content
                     }
                     
-                    // Default streaming configuration (like in shaka.html)
                     player.configure({
                         streaming: {
                             bufferingGoal: 60,
@@ -4759,13 +4672,8 @@
                         }
                     });
                     
-                    // Load the manifest
                     await player.load(url);
-                    
-                    // Success - autoplay the stream
                     elements.playerMessageArea.style.display = 'none';
-                    
-                    // Autoplay the video after successful load
                     enhancedAutoplay(video);
                     
                     resolve();
@@ -7292,6 +7200,14 @@ async function switchToServer(server, allServers) {
             elements.stretchBtn.addEventListener('click', () => {
                 toggleStretch();
             });
+
+            // Profile Icon -> Admin Login
+            const profileIcon = document.querySelector('.user-profile');
+            if(profileIcon) {
+                profileIcon.addEventListener('click', () => {
+                    window.location.href = 'admin/login.php';
+                });
+            }
         }
         
         // Function to create and add the stretch button to Plyr controls
@@ -7369,81 +7285,65 @@ async function switchToServer(server, allServers) {
 }
 
 
-        // Handle search
-        function handleSearch() {
+        // Handle search by calling the new backend API
+        async function handleSearch() {
             const query = elements.searchInput.value.toLowerCase();
             elements.searchResults.innerHTML = '';
-
-            // Collapse listbox by default until we decide to show something
             elements.searchInput.setAttribute('aria-expanded', 'false');
 
-            // Require minimal input length
             if (query.length < 2) {
                 elements.searchResults.style.display = 'none';
                 return;
             }
 
-            // Determine if data is available for searching
-            const dataLoaded = (cineData && cineData.Categories && cineData.Categories.length > 0) ||
-                               (Array.isArray(cachedContent) && cachedContent.length > 0);
+            try {
+                const response = await fetch(`api/search.php?query=${encodeURIComponent(query)}`);
+                const results = await response.json();
 
-            if (!dataLoaded) {
-                const message = document.createElement('div');
-                message.className = 'search-message';
-                message.setAttribute('role', 'status');
-                message.textContent = 'Search unavailable. Content is still loading.';
-                elements.searchResults.appendChild(message);
-                elements.searchResults.style.display = 'block';
-                elements.searchInput.setAttribute('aria-expanded', 'true');
-                return;
-            }
-
-            const results = [];
-
-            // Search through cached content
-            cachedContent.forEach(item => {
-                if (item.Title.toLowerCase().includes(query)) {
-                    results.push({
-                        title: item.Title,
-                        type: item.type === 'movie' ? 'Movie' :
-                              item.type === 'series' ? 'TV Series' : 'Live TV',
-                        thumbnail: item.Thumbnail || item.Poster,
-                        year: item.Year || ''
+                if (results.success && results.data.length > 0) {
+                    results.data.forEach(result => {
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'search-result-item';
+                        resultItem.setAttribute('role', 'option');
+                        resultItem.innerHTML = `
+                            <img src="${result.poster_url}" alt="${result.title}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE_URL}';">
+                            <div class="search-result-info">
+                                <h4>${result.title}</h4>
+                                <p>${result.type} • ${result.release_year || ''}</p>
+                            </div>
+                        `;
+                        resultItem.addEventListener('click', () => {
+                            // Since the search API returns partial data, we need to find the full
+                            // object in our main `cachedContent` to open the viewer.
+                            const found = cachedContent.find(item => item.Title.toLowerCase() === result.title.toLowerCase());
+                            if (found) {
+                                openViewer(found);
+                            } else {
+                                // Fallback: If not in cached content (e.g., on a filtered view),
+                                // we might need a separate API call to get full content details.
+                                // For now, we'll alert the user.
+                                alert('Could not open this item directly. Please find it on the main page.');
+                            }
+                            elements.searchResults.style.display = 'none';
+                            elements.searchInput.setAttribute('aria-expanded', 'false');
+                        });
+                        elements.searchResults.appendChild(resultItem);
                     });
+                    elements.searchResults.style.display = 'block';
+                    elements.searchInput.setAttribute('aria-expanded', 'true');
+                } else {
+                    const message = document.createElement('div');
+                    message.className = 'search-message';
+                    message.textContent = `No results for "${elements.searchInput.value}"`;
+                    elements.searchResults.appendChild(message);
+                    elements.searchResults.style.display = 'block';
+                    elements.searchInput.setAttribute('aria-expanded', 'true');
                 }
-            });
-
-            if (results.length > 0) {
-                results.slice(0, 5).forEach(result => {
-                    const resultItem = document.createElement('div');
-                    resultItem.className = 'search-result-item';
-                    resultItem.setAttribute('role', 'option');
-                    resultItem.setAttribute('aria-selected', 'false');
-                    resultItem.innerHTML = `
-                        <img src="${result.thumbnail}" alt="${result.title}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE_URL}';">
-                        <div class="search-result-info">
-                            <h4>${result.title}</h4>
-                            <p>${result.type} • ${result.year || ''}</p>
-                        </div>
-                    `;
-                    resultItem.addEventListener('click', () => {
-                        // Find the content and open viewer
-                        const found = cachedContent.find(item => item.Title === result.title);
-                        if (found) {
-                            openViewer(found);
-                        }
-                        elements.searchResults.style.display = 'none';
-                        elements.searchInput.setAttribute('aria-expanded', 'false');
-                    });
-                    elements.searchResults.appendChild(resultItem);
-                });
-                elements.searchResults.style.display = 'block';
-                elements.searchInput.setAttribute('aria-expanded', 'true');
-            } else {
+            } catch (error) {
+                console.error('Search API error:', error);
                 const message = document.createElement('div');
                 message.className = 'search-message';
-                message.setAttribute('role', 'status');
-                message.textContent = `No results for "${elements.searchInput.value}"`;
+                message.textContent = 'Search failed to load.';
                 elements.searchResults.appendChild(message);
                 elements.searchResults.style.display = 'block';
                 elements.searchInput.setAttribute('aria-expanded', 'true');
@@ -8052,7 +7952,7 @@ async function switchToServer(server, allServers) {
             return count.toString();
         }
 
-        function updateLikeDislikeUI(contentId) {
+        async function updateLikeDislikeUI(contentId) {
             const likeCheckbox = document.getElementById('like-checkbox');
             const dislikeCheckbox = document.getElementById('dislike-checkbox');
             const likeCountSpan = document.getElementById('like-count-span');
@@ -8060,46 +7960,93 @@ async function switchToServer(server, allServers) {
 
             if (!likeCheckbox || !dislikeCheckbox || !likeCountSpan || !dislikeCountSpan) return;
 
-            const interactions = getVideoInteractions(contentId);
-            likeCountSpan.textContent = formatCount(interactions.likes);
-            dislikeCountSpan.textContent = formatCount(interactions.dislikes);
+            try {
+                const response = await fetch(`api/interactions.php?content_id=${contentId}`);
+                const result = await response.json();
 
-            likeCheckbox.checked = interactions.userAction === 'liked';
-            dislikeCheckbox.checked = interactions.userAction === 'disliked';
+                if (result.success) {
+                    likeCountSpan.textContent = formatCount(result.data.likes);
+                    dislikeCountSpan.textContent = formatCount(result.data.dislikes);
+
+                    // TODO: The user-specific "liked" or "disliked" state would need to be
+                    // tracked, for example, in localStorage or via a user session on the backend.
+                    // For now, we are just displaying the counts.
+                    // likeCheckbox.checked = result.data.userAction === 'liked';
+                    // dislikeCheckbox.checked = result.data.userAction === 'disliked';
+
+                } else {
+                    console.error("Failed to fetch interaction counts:", result.message);
+                }
+            } catch (error) {
+                console.error("API error fetching interaction counts:", error);
+            }
         }
 
-        function handleLike() {
-            if (!currentContentInfo || !currentContentInfo.Title) return;
-            const contentId = currentContentInfo.Title;
-            let interactions = getVideoInteractions(contentId);
+        async function handleLike() {
+            if (!currentContentInfo || !currentContentInfo.id) return;
+            const contentId = currentContentInfo.id;
 
-            if (interactions.userAction === 'liked') {
-                interactions.likes--;
-                interactions.userAction = null;
+            // Optimistically update the UI
+            const likeCheckbox = document.getElementById('like-checkbox');
+            const dislikeCheckbox = document.getElementById('dislike-checkbox');
+            const likeCountSpan = document.getElementById('like-count-span');
+            let currentLikes = parseInt(likeCountSpan.textContent.replace(/K|M/g, '000'));
+
+            if (likeCheckbox.checked) { // This is the state *after* the click
+                 likeCountSpan.textContent = formatCount(currentLikes + 1);
+                 if(dislikeCheckbox.checked) {
+                     dislikeCheckbox.checked = false;
+                     // Also update dislike count if it was previously disliked
+                 }
             } else {
-                if (interactions.userAction === 'disliked') interactions.dislikes--;
-                interactions.likes++;
-                interactions.userAction = 'liked';
+                 likeCountSpan.textContent = formatCount(currentLikes - 1);
             }
-            saveVideoInteractions(contentId, interactions);
-            updateLikeDislikeUI(contentId);
+
+            // Send the update to the server
+            try {
+                await fetch('api/interactions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content_id: contentId, action: 'like' })
+                });
+                // Optionally, refetch the true counts to ensure UI is accurate
+                updateLikeDislikeUI(contentId);
+            } catch (error) {
+                console.error("Failed to update like count:", error);
+                // Revert optimistic update on failure
+                updateLikeDislikeUI(contentId);
+            }
         }
 
-        function handleDislike() {
-            if (!currentContentInfo || !currentContentInfo.Title) return;
-            const contentId = currentContentInfo.Title;
-            let interactions = getVideoInteractions(contentId);
+        async function handleDislike() {
+            if (!currentContentInfo || !currentContentInfo.id) return;
+            const contentId = currentContentInfo.id;
 
-            if (interactions.userAction === 'disliked') {
-                interactions.dislikes--;
-                interactions.userAction = null;
+            // Optimistic UI update
+            const dislikeCheckbox = document.getElementById('dislike-checkbox');
+            const likeCheckbox = document.getElementById('like-checkbox');
+            const dislikeCountSpan = document.getElementById('dislike-count-span');
+            let currentDislikes = parseInt(dislikeCountSpan.textContent.replace(/K|M/g, '000'));
+
+            if(dislikeCheckbox.checked) {
+                dislikeCountSpan.textContent = formatCount(currentDislikes + 1);
+                if(likeCheckbox.checked) likeCheckbox.checked = false;
             } else {
-                if (interactions.userAction === 'liked') interactions.likes--;
-                interactions.dislikes++;
-                interactions.userAction = 'disliked';
+                dislikeCountSpan.textContent = formatCount(currentDislikes - 1);
             }
-            saveVideoInteractions(contentId, interactions);
-            updateLikeDislikeUI(contentId);
+
+            // Send the update to the server
+            try {
+                await fetch('api/interactions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content_id: contentId, action: 'dislike' })
+                });
+                updateLikeDislikeUI(contentId);
+            } catch (error) {
+                console.error("Failed to update dislike count:", error);
+                updateLikeDislikeUI(contentId);
+            }
         }
         // --- End Like/Dislike Functionality ---
 
