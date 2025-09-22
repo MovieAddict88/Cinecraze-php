@@ -1,0 +1,2740 @@
+/* Notification Bar Styles */
+.notification-bar {
+    background-color: var(--primary);
+    color: white;
+    padding: 15px 20px;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1001;
+    display: none; /* Initially hidden */
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.notification-bar p {
+    margin: 0;
+    font-size: 16px;
+}
+
+.notification-bar a {
+    color: white;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.notification-bar .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 20px;
+}
+:root {
+    --primary: #e50914;
+    --primary-dark: #b20710;
+    --movie-badge: #007bff;
+    --series-badge: #28a745;
+    --live-badge: #e50914;
+    --dark: #141414;
+    --dark-2: #1a1a1a;
+    --dark-3: #222222;
+    --light: #f5f5f5;
+    --light-2: #e6e6e6;
+    --gray: #8c8c8c;
+    --transition: all 0.3s ease;
+    --shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    --radius: 12px;
+    --header-height: 70px;
+    --footer-height: 120px;
+    --youtube-red: #ff0000;
+    --youtube-dark: #0f0f0f;
+    --youtube-gray: #272727;
+    --youtube-light-gray: #aaaaaa;
+    --youtube-dark-gray: #181818;
+    --youtube-light: #f1f1f1;
+    --youtube-blue: #3ea6ff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--youtube-dark);
+    color: var(--light);
+    overflow-x: hidden;
+    transition: background-color 0.3s ease;
+}
+
+/* Header Styles */
+header {
+    background: var(--youtube-dark);
+    padding: 15px 5%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: var(--transition);
+    border-bottom: 1px solid var(--youtube-gray);
+}
+
+header.scrolled {
+    background-color: var(--youtube-dark);
+    box-shadow: var(--shadow);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--youtube-red);
+    text-decoration: none;
+}
+
+/* .logo i { */ /* This rule is no longer needed as the <i> tag was replaced */
+    /* color: var(--youtube-red); */
+/* } */
+
+.logo img {
+    height: 30px;
+    width: 30px;  /* Set width equal to height for a circle */
+    border-radius: 50%; /* Makes the image circular */
+    object-fit: cover; /* Ensures the image covers the area, useful if not square */
+    /* No specific color property needed for img, but ensure it's not affected by parent color if it were an SVG with currentColog */
+}
+
+.search-container {
+    position: relative;
+    width: 40%; /* Default for desktop */
+    transition: width 0.3s ease;
+    display: flex; /* Visible by default on desktop */
+    align-items: center;
+}
+
+.search-input-container {
+    position: relative;
+    width: 100%;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 10px 15px;
+    padding-right: 40px;
+    border-radius: 30px;
+    border: none;
+    background-color: var(--youtube-gray);
+    color: var(--light);
+    font-size: 16px;
+    transition: var(--transition);
+}
+
+.search-container input:focus {
+    outline: none;
+    background-color: var(--dark-3);
+    box-shadow: 0 0 0 2px var(--youtube-red);
+}
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--dark-3);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1001;
+}
+
+.search-result-item {
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid var(--dark-2);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.search-result-item:hover {
+    background-color: var(--dark-2);
+}
+
+.search-message {
+    padding: 12px 15px;
+    color: var(--light-2);
+    font-size: 14px;
+    border-bottom: 1px solid var(--dark-2);
+}
+
+.search-result-item img {
+    width: 50px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.search-result-info h4 {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.search-result-info p {
+    font-size: 14px;
+    color: var(--gray);
+}
+
+.close-search-btn {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--gray);
+    cursor: pointer;
+    z-index: 3;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.theme-toggle {
+    background: none;
+    border: none;
+    color: var(--light);
+    font-size: 22px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.theme-toggle:hover {
+    color: var(--youtube-red);
+}
+
+.user-profile {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--youtube-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Main Content */
+main {
+    padding-top: var(--header-height);
+    min-height: calc(100vh - var(--header-height) - var(--footer-height));
+}
+
+.carousel {
+    margin: 0 5% 30px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+    height: 400px;
+}
+
+.carousel-inner {
+    display: flex;
+    height: 100%;
+    transition: transform 0.5s ease;
+}
+
+.carousel-item {
+    min-width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carousel-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 30px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+}
+
+.carousel-content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.carousel-content p {
+    max-width: 600px;
+    margin-bottom: 20px;
+    color: var(--light-2);
+    font-size: 1em; /* Base size for description */
+    line-height: 1.5;
+}
+
+.carousel-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Space between rating and year */
+    margin-bottom: 10px; /* Space below meta and above description */
+    color: var(--light-2); /* General color for meta items */
+}
+
+.carousel-meta .star-rating {
+    font-size: 0.9em; /* Slightly smaller stars in carousel */
+}
+.carousel-meta .star-rating .fas.fa-star,
+.carousel-meta .star-rating .fas.fa-star-half-alt {
+    color: gold;
+}
+.carousel-meta .star-rating .far.fa-star {
+    color: rgba(255, 255, 255, 0.5); /* Lighter empty stars for dark background */
+}
+
+.carousel-year {
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.carousel-controls {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    transform: translateY(-50%);
+}
+
+.carousel-btn {
+    background: rgba(0,0,0,0.5);
+    border: none;
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.carousel-btn:hover {
+    background: var(--youtube-red);
+}
+
+.carousel-indicators {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.indicator.active {
+    background: var(--youtube-red);
+    transform: scale(1.2);
+}
+
+/* Filters Section */
+.filters-section {
+    padding: 0 5%;
+    margin-bottom: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--gray);
+}
+
+.filter-select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: var(--radius);
+    background-color: var(--youtube-gray);
+    border: 1px solid var(--dark-2);
+    color: var(--light);
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.autocomplete-container {
+    position: relative;
+}
+
+.autocomplete-items {
+    position: absolute;
+    border: 1px solid var(--dark-2);
+    border-top: none;
+    z-index: 99;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--youtube-gray);
+    border-radius: 0 0 var(--radius) var(--radius);
+    overflow-y: auto;
+    max-height: 200px;
+}
+
+.autocomplete-items div {
+    padding: 10px;
+    cursor: pointer;
+    background-color: var(--youtube-gray);
+    color: var(--light);
+}
+
+.autocomplete-items div:hover {
+    background-color: var(--dark-3);
+}
+
+.autocomplete-active {
+    background-color: var(--youtube-red) !important;
+    color: #ffffff;
+}
+
+.view-toggle {
+    display: flex;
+    gap: 10px;
+}
+
+.view-btn {
+    background-color: var(--youtube-gray);
+    border: none;
+    color: var(--light);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.view-btn.active, .view-btn:hover {
+    background-color: var(--youtube-red);
+}
+
+/* Content Grid */
+.content-container {
+    padding: 0 5% 50px;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 25px;
+}
+
+.content-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    display: none;
+}
+
+.content-card {
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: var(--transition);
+    cursor: pointer;
+    position: relative;
+}
+
+.content-card.grid {
+    aspect-ratio: 2 / 3; /* Enforce consistent aspect ratio for desktop grid cards */
+}
+
+.content-card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--shadow);
+}
+
+@media (max-width: 480px) {
+  .content-card.grid {
+    aspect-ratio: auto;
+    height: auto;
+    min-height: 300px;
+  }
+}
+
+
+.content-card.list {
+    display: flex;
+    height: 150px;
+}
+
+.content-card.list .card-img {
+    width: 100px;
+    height: 100%;
+}
+
+.card-img {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.content-card.grid .card-img {
+    height: 85%;
+}
+
+.card-img img {
+    display: block; /* Ensure image behaves as a block-level element */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* transition: var(--transition); Removed as opacity transition is more specific */
+    opacity: 0; /* Start with opacity 0 for lazy loading */
+    transition: opacity 0.3s ease;
+}
+
+.card-img img.loaded {
+    opacity: 1;
+}
+
+.card-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    z-index: 2;
+}
+
+.badge-movie {
+    background-color: var(--movie-badge);
+}
+
+.badge-series {
+    background-color: var(--series-badge);
+}
+
+.badge-live {
+    background-color: var(--live-badge);
+}
+
+.delete-watch-later-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(229, 9, 20, 0.8);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    z-index: 3;
+}
+.delete-watch-later-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+.content-card.grid .card-watch-later-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    z-index: 3;
+}
+.content-card.grid .card-watch-later-btn:hover {
+    background: var(--primary);
+    transform: scale(1.1);
+}
+
+.content-card.grid .card-watch-later-btn.active {
+    background: var(--primary);
+}
+
+.content-card.grid .card-watch-later-btn.active:hover {
+    background: var(--primary-dark);
+}
+
+.card-info {
+    padding: 15px;
+}
+
+.card-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.content-card.list .card-title-container {
+    align-items: center;
+}
+
+.content-card.list .card-watch-later-btn {
+    background: none;
+    border: 1px solid var(--gray);
+    color: var(--gray);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.content-card.list .card-watch-later-btn:hover {
+    background: var(--primary-dark);
+    color: white;
+    border-color: var(--primary-dark);
+}
+
+.content-card.list .card-watch-later-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.content-card.grid .card-info {
+  padding: 8px; /* Reduced padding to save space */
+  background-color: var(--youtube-dark-gray);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Align content to the top */
+  align-items: center;
+  text-align: center;
+  flex-grow: 1;
+  overflow: hidden; /* Hide overflow from card-info itself */
+}
+
+.content-card.grid .card-title {
+    height: auto; /* Allow title to define its own height up to max-height / line-clamp */
+    margin-bottom: 5px; /* Add some space below the title before meta */
+}
+
+.content-card.grid .card-meta {
+    /* display: none; */ /* Hide rating and duration in grid view - Commented out to show meta */
+    display: flex; /* Ensure it's a flex container */
+    flex-direction: column; /* Stack items vertically */
+    align-items: center; /* Center items horizontally */
+    gap: 4px; /* Reduced gap between meta items slightly */
+    margin-top: 0; /* Reset margin-top as title has margin-bottom */
+    padding: 0 5px; /* Add some horizontal padding if needed */
+    width: 100%; /* Take full width to allow text centering */
+}
+
+.content-card.grid .card-meta .star-rating {
+    font-size: 12px; /* Slightly smaller star size for grid */
+}
+
+.content-card.grid .card-meta span { /* Target direct span children for duration/country */
+    font-size: 11px; /* Slightly smaller text size for duration/country */
+    text-align: center; /* Ensure text is centered */
+    display: inline-flex; /* To allow icon and text on same line if needed */
+    align-items: center;
+    gap: 3px; /* Space between icon and text if any */
+}
+
+.content-card.grid .card-meta .meta-country {
+    white-space: nowrap; /* Prevent country name from wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90%; /* Prevent very long country names from breaking layout */
+}
+
+.content-card.grid .card-meta .meta-country .fi {
+    font-size: 0.8em; /* Slightly smaller flag in grid */
+    flex-shrink: 0; /* Prevent flag from shrinking */
+}
+
+.content-card.grid .card-meta span .fas.fa-clock {
+    color: inherit; /* Make clock icon inherit color from parent span (i.e., neutral) */
+}
+
+/* Adjustments to ensure card-info does not exceed its allocated 15% height too much */
+.content-card.grid {
+    /* aspect-ratio: 2 / 3; already defined */
+    /* Ensure the card itself handles overflow if card-info becomes too tall */
+    overflow: hidden;
+}
+
+.content-card.grid .card-img {
+    height: 70%; /* Adjusted image height after removing description from grid info */
+}
+
+/* For very small screens where aspect-ratio is auto, image height is also 70% */
+/* No specific override needed here if the main rule is now 70% unless a different value is desired */
+/* The @media (max-width: 480px) .content-card.grid .card-img rule can be removed if it's also 70% */
+/* For clarity, I will remove the specific override if it's the same as the new base. */
+
+@media (max-width: 480px) {
+  /* .content-card.grid .card-img { height: 70%; } */ /* This is now covered by the general rule above */
+
+  .content-card.grid .card-info {
+    min-height: 100px;
+    justify-content: flex-start; /* Align content to top */
+  }
+
+  .content-card.grid .card-meta {
+    display: flex; /* Ensure meta is still shown, removing the old display:none rule from this breakpoint */
+  }
+
+          /* General card title adjustments for very small screens */
+          .card-title { /* Applies to both grid and list unless overridden */
+    font-size: 13px;
+            -webkit-line-clamp: 2; /* Ensure 2 lines */
+            /* height was !important, use max-height if possible for flexibility */
+            max-height: calc(13px * 1.4 * 2);
+            overflow: hidden !important; /* Retained from previous fix, but check if needed */
+          }
+          /* Specific override for list view title if needed, or let general rule apply */
+          .content-card.list .card-title {
+             font-size: 14px; /* Example: slightly larger than grid title on smallest screens */
+             max-height: calc(14px * 1.4 * 2);
+  }
+
+
+  .card-meta { /* This rule still applies to .content-card.list .card-meta */
+            font-size: 11px; /* Already set */
+             margin-top: 3px; /* Adjust margin */
+  }
+           .content-card.list .card-meta { /* Specific for list view on smallest screens */
+               font-size: 11px;
+           }
+
+
+  .content-card.list .card-description {
+    font-size: 12px; /* Adjust description font size for small screens */
+    line-height: 1.4; /* Ensure good line spacing for readability */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2; /* Limit to 2 lines */
+    overflow: hidden;
+    text-overflow: ellipsis;
+            margin-top: 3px; /* Adjust margin */
+            /* max-height: calc(12px * 1.4 * 2); /* Fallback for non-webkit */
+    */
+  }
+}
+
+
+.content-card.list .card-info {
+    flex: 1;
+    padding: 15px 20px;
+}
+
+
+.card-title {
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--light);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* default 2 lines */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  font-size: 16px;
+  max-height: 3.0em; /* Use max-height instead of height for flexibility */
+  width: 100%; /* Ensure title takes full width of its container */
+}
+
+.content-card.grid .card-title {
+    height: auto; /* Allow title to define its own height up to max-height / line-clamp */
+}
+
+
+.card-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--youtube-light-gray);
+}
+
+.content-card.grid .card-meta {
+    /* display: none; */ /* Hide rating and duration in grid view - Commented out to show meta */
+    display: flex; /* Ensure it's a flex container */
+    flex-direction: column; /* Stack items vertically */
+    align-items: center; /* Center items horizontally */
+    gap: 5px; /* Add some space between meta items */
+    margin-top: 8px; /* Add space above the meta section */
+    padding: 0 5px; /* Add some horizontal padding if needed */
+}
+
+.content-card.grid .card-meta .star-rating {
+    font-size: 13px; /* Adjust star size for grid */
+}
+
+.content-card.grid .card-meta span { /* Target direct span children for duration/country */
+    font-size: 12px; /* Adjust text size for duration/country */
+    text-align: center; /* Ensure text is centered */
+}
+
+/* Ensure Netflix-style meta for list view is not affected if it shares general span tags */
+.content-card.list .card-meta .meta-netflix-style span {
+    font-size: 13px; /* Keep original list view font size or adjust as needed */
+    text-align: left; /* Keep original alignment for list view */
+}
+
+.content-card.grid .card-meta .meta-country .fi {
+    font-size: 0.9em; /* Slightly smaller flag in grid */
+}
+
+
+
+
+
+
+.card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.card-meta i {
+    color: var(--youtube-red);
+    font-size: 18px; /* Default for desktop grid and list, and larger mobile list */
+}
+
+.star-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px; /* Space between stars */
+}
+
+.star-rating .fas.fa-star,
+.star-rating .fas.fa-star-half-alt {
+    color: gold; /* Gold color for full and half stars */
+}
+.star-rating .far.fa-star {
+    color: #ccc; /* Color for empty stars */
+}
+
+.content-card.list .card-meta .meta-netflix-style {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping if space is tight, though unlikely for 3 items */
+    align-items: center;
+    gap: 0; /* Remove gap from parent .card-meta if any was applied directly here */
+    color: var(--youtube-light-gray); /* Standard light gray for meta text */
+    font-size: 13px; /* Slightly smaller font */
+}
+
+.content-card.list .card-meta .meta-netflix-style span:not(:empty):not(:last-child)::after {
+    content: "·";
+    margin: 0 0.4em; /* Space around the dot */
+    color: var(--youtube-light-gray); /* Dot color */
+}
+.content-card.list .card-meta .meta-netflix-style span:empty {
+    display: none; /* Hide empty spans (if year/country/duration is missing) */
+}
+
+.content-card.list .card-meta .meta-netflix-style .meta-country {
+    display: inline-flex; /* Align flag and text */
+    align-items: center;
+    gap: 0.3em; /* Space between flag and country name */
+}
+
+.content-card.list .card-meta .meta-netflix-style .meta-country .fi {
+    /* Adjust size if needed, flag-icon-css default is usually good */
+    /* line-height: 1; /* Helps with vertical alignment if text is taller */
+}
+
+
+/* Live TV: uniform, non-cropped logos */
+.content-card[data-type="live"] .card-img {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--youtube-dark-gray);
+}
+.content-card[data-type="live"] .card-img img {
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    padding: 8%;
+}
+
+/* Viewer Page - YouTube Style */
+.viewer-page {
+    display: none;
+    padding: 30px 5% 50px;
+    background: var(--youtube-dark);
+    position: relative;
+}
+
+.youtube-viewer-container {
+    display: flex;
+    flex-direction: column;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.player-container {
+    width: 100%;
+    position: relative;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    background: #000;
+}
+
+.plyr {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius);
+}
+
+/* UPDATED: Viewer Content - YouTube Style Grid Layout */
+.viewer-content {
+    display: grid;
+    grid-template-columns: 1fr; /* Default for mobile */
+    gap: 20px; /* Reduced gap */
+}
+
+@media (min-width: 992px) { /* Apply grid for larger screens */
+    .viewer-content {
+        grid-template-columns: minmax(0, 2.5fr) minmax(0, 1fr); /* Main content and sidebar */
+        gap: 24px;
+        align-items: start; /* Align items to the start of the grid cell */
+    }
+    .related-videos {
+        /* Make sidebar scrollable if content exceeds viewport height */
+        /* Consider viewport height minus header/player height for max-height */
+        max-height: calc(100vh - var(--header-height) - 40px); /* Adjust 40px for padding/margins */
+        overflow-y: auto;
+        padding-right: 5px; /* Space for scrollbar if it appears */
+    }
+}
+
+.video-details {
+    /* flex: 1; No longer needed with grid */
+    min-width: 0; /* Allow shrinking in grid */
+}
+
+.video-info {
+    margin-bottom: 20px;
+}
+
+.video-title {
+    font-size: 24px;
+    margin-bottom: 12px;
+    color: var(--light);
+}
+
+.video-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--youtube-gray);
+    margin-bottom: 20px;
+}
+
+.video-stats {
+    display: flex;
+    gap: 20px;
+    color: var(--youtube-light-gray);
+    font-size: 14px;
+}
+
+.video-stats span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.video-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--light);
+    cursor: pointer;
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.action-btn:hover,
+.action-btn.active { /* Added .active state */
+    color: var(--youtube-red);
+}
+
+.action-btn#stretch-btn.active {
+    color: var(--series-badge);
+}
+
+.action-btn i {
+    font-size: 18px;
+}
+
+.video-description {
+    background-color: var(--youtube-gray);
+    border-radius: var(--radius);
+    padding: 15px;
+    margin-bottom: 25px;
+    line-height: 1.6;
+    font-size: 15px;
+    white-space: pre-line;
+}
+
+.episode-selector-container {
+    display: none; /* JS handles visibility */
+    margin-bottom: 20px;
+    background-color: var(--youtube-gray); /* Keep background for grouping */
+    border-radius: var(--radius);
+    padding: 15px;
+}
+.episode-selector-container h3 {
+    font-size: 16px;
+    color: var(--light);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.episode-selector {
+    width: 100%;
+    padding: 10px 12px; /* Adjusted padding */
+    border-radius: 4px; /* Sharper radius */
+    background-color: var(--youtube-dark-gray); /* Darker background for select */
+    border: 1px solid var(--dark-3); /* Subtle border */
+    color: var(--light);
+    font-size: 14px; /* Slightly smaller font */
+    cursor: pointer;
+}
+.episode-selector:focus {
+    outline: none;
+    border-color: var(--youtube-red);
+}
+
+.server-selector-container {
+    display: none;
+    margin-bottom: 12px;
+    background-color: var(--youtube-gray);
+    border-radius: var(--radius);
+    padding: 12px;
+}
+.server-selector-container h3 {
+    font-size: 16px;
+    color: var(--light);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+.server-selector {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 4px;
+    background-color: var(--youtube-dark-gray);
+    border: 1px solid var(--dark-3);
+    color: var(--light);
+    font-size: 14px;
+    cursor: pointer;
+}
+.server-selector:focus {
+    outline: none;
+    border-color: var(--youtube-red);
+}
+
+.season-selector {
+    display: none; /* JS handles visibility */
+    margin-bottom: 20px; /* Consistent margin */
+    background-color: var(--youtube-gray);
+    border-radius: var(--radius);
+    padding: 15px;
+}
+
+.season-selector h3 {
+    font-size: 16px;
+    color: var(--light);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.seasons-grid {
+    display: grid;
+    /* Adjust columns for sidebar context if moved, or make it scrollable horizontally */
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Smaller cards */
+    gap: 10px;
+    max-height: 300px; /* Example: limit height and make scrollable if many seasons */
+    overflow-y: auto; /* Add scroll if content overflows */
+}
+
+.season-card {
+    background-color: var(--youtube-dark-gray); /* Consistent with episode selector */
+    border-radius: 4px; /* Sharper radius */
+    overflow: hidden;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid var(--dark-3); /* Subtle border */
+}
+
+.season-card:hover {
+    transform: translateY(-3px); /* Subtle hover */
+    border-color: var(--youtube-red);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.season-card img {
+    display: block; /* Ensure block behavior */
+    width: 100%;
+    height: 140px; /* Increased base height */
+    object-fit: cover;
+}
+
+.season-info {
+    padding: 10px; /* Adjusted padding */
+    text-align: left; /* Align text left for better readability */
+}
+
+.season-info h4 {
+    font-size: 13px; /* Smaller font */
+    color: var(--light);
+    margin: 0;
+    line-height: 1.3;
+     display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Styling for scrollbars in season/episode lists and sidebar */
+.seasons-grid::-webkit-scrollbar,
+.related-grid::-webkit-scrollbar,
+.related-videos::-webkit-scrollbar { /* Added .related-videos for consistent sidebar scrollbar */
+    width: 8px;
+}
+.seasons-grid::-webkit-scrollbar-track,
+.related-grid::-webkit-scrollbar-track,
+.related-videos::-webkit-scrollbar-track {
+    background: var(--youtube-dark-gray); /* Match sidebar background */
+    border-radius: 4px;
+}
+.seasons-grid::-webkit-scrollbar-thumb,
+.related-grid::-webkit-scrollbar-thumb,
+.related-videos::-webkit-scrollbar-thumb {
+    background-color: var(--youtube-light-gray);
+    border-radius: 4px;
+    border: 2px solid var(--youtube-dark-gray); /* Creates a 'track' around the thumb */
+}
+.seasons-grid::-webkit-scrollbar-thumb:hover,
+.related-grid::-webkit-scrollbar-thumb:hover,
+.related-videos::-webkit-scrollbar-thumb:hover {
+    background-color: var(--youtube-red);
+}
+
+.related-videos {
+    /* width: 400px; No longer fixed width, grid handles it */
+    min-width: 0; /* Allow shrinking in grid */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Removed max-width: 1200px media query for .related-videos width: 100%
+   as grid layout handles this better. */
+
+.related-title {
+    margin: 0 0 15px; /* Adjusted margin */
+    font-size: 18px; /* Slightly smaller title for sidebar */
+    color: var(--light);
+    font-weight: 600;
+}
+
+.related-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Adjusted gap */
+}
+
+.related-card {
+    display: flex;
+    gap: 10px; /* Adjusted gap */
+    cursor: pointer;
+    transition: var(--transition);
+    padding: 8px; /* Add some padding for hover effect area */
+    border-radius: var(--radius);
+}
+
+.related-card:hover {
+    /* border-radius is already set */
+}
+
+@property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+@keyframes spin {
+    to {
+        --angle: 360deg;
+    }
+}
+
+.content-card, .related-card {
+    border: 2px solid transparent;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+}
+
+.content-card::after, .related-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--youtube-gray);
+    border-radius: inherit;
+    z-index: -1;
+}
+
+.content-card::before, .related-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -2;
+    margin: -2px;
+    border-radius: inherit;
+    background: conic-gradient(from var(--angle), var(--primary-dark), var(--primary), var(--primary-dark));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.content-card:hover::before, .related-card:hover::before {
+    opacity: 1;
+    animation: spin 2.5s linear infinite;
+}
+
+.related-thumbnail {
+    width: 160px; /* Adjusted for sidebar */
+    height: 90px;  /* Maintain 16:9 approx ratio */
+    border-radius: 4px; /* Smaller radius */
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.related-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.related-info {
+    flex: 1;
+}
+
+.related-info h4 {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: var(--light);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.related-channel {
+    font-size: 13px;
+    color: var(--youtube-light-gray);
+    margin-bottom: 5px;
+}
+
+.related-meta { /* This class is no longer directly used for the main details, but might be used by other elements or future code */
+    font-size: 12px;
+    color: var(--youtube-light-gray);
+}
+
+.related-meta-stars {
+    margin-bottom: 4px; /* Space between stars and details */
+}
+.related-meta-stars .star-rating { /* Ensure stars in related content are sized appropriately */
+    font-size: 13px;
+}
+.related-meta-stars .star-rating .fas.fa-star,
+.related-meta-stars .star-rating .fas.fa-star-half-alt {
+    color: gold;
+}
+.related-meta-stars .star-rating .far.fa-star {
+    color: #ccc;
+}
+
+.related-meta-details .meta-netflix-style {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+    color: var(--youtube-light-gray);
+    font-size: 12px; /* Slightly smaller font for related items */
+}
+
+.related-meta-details .meta-netflix-style span:not(:empty):not(:last-child)::after {
+    content: "·";
+    margin: 0 0.4em;
+    color: var(--youtube-light-gray);
+}
+.related-meta-details .meta-netflix-style span:empty {
+    display: none;
+}
+
+.related-meta-details .meta-netflix-style .meta-country {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+}
+.related-meta-details .meta-netflix-style .meta-country .fi {
+     /* Uses default flag icon size, adjust if needed */
+}
+
+.related-channel {
+    font-size: 13px; /* Existing style */
+    color: var(--youtube-light-gray); /* Existing style */
+    margin-top: 6px; /* Add some space above the channel name */
+}
+
+.close-viewer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: var(--light);
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--youtube-gray);
+    border: none;
+    color: var(--light);
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: var(--transition);
+}
+
+.back-button:hover {
+    background: var(--youtube-red);
+}
+
+/* Mobile-specific back button styling */
+@media (max-width: 768px) {
+    .back-button {
+        padding: 12px 20px;
+        font-size: 16px;
+        min-height: 48px; /* Touch-friendly size */
+        border-radius: 24px;
+        margin: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .back-button:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+    }
+
+    .mobile-back-hint {
+        display: inline-block !important;
+        font-size: 12px;
+        opacity: 0.8;
+        margin-left: 8px;
+    }
+
+    .back-text {
+        display: none;
+    }
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: var(--dark-2);
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow: auto;
+    position: relative;
+    box-shadow: var(--shadow);
+}
+
+.modal-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--dark-3);
+}
+
+.modal-title {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: var(--light);
+    font-size: 24px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.close-modal:hover {
+    color: var(--primary);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+/* Parental Controls Styles */
+.parental-controls-content, .pin-entry-content {
+    max-width: 500px;
+}
+.ratings-select-content {
+    max-width: 400px;
+}
+.parental-control-pin-section {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--dark-3);
+}
+.pin-display-container {
+    margin: 20px 0;
+}
+.pin-display, .pin-display-input {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+.pin-display .pin-dot, .pin-display-input .pin-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--dark-3);
+    border: 2px solid var(--gray);
+    transition: all 0.2s ease;
+}
+.pin-display .pin-dot.filled, .pin-display-input .pin-dot.filled {
+    background-color: var(--youtube-red);
+    border-color: var(--youtube-red);
+}
+.pin-status-text, .pin-status-text-input {
+    min-height: 20px;
+    color: var(--youtube-light-gray);
+}
+.pin-pad, .pin-pad-input {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 300px;
+    margin: 20px auto;
+}
+.pin-pad .pin-btn, .pin-pad-input .pin-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--youtube-red);
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.pin-pad .pin-btn:hover, .pin-pad-input .pin-btn:hover {
+    background-color: var(--primary-dark);
+    transform: scale(1.05);
+}
+.pin-pad .pin-btn.backspace, .pin-pad-input .pin-btn.backspace {
+    background-color: transparent;
+    font-size: 24px;
+}
+.parental-control-setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--dark-3);
+}
+.parental-control-setting-item:last-child {
+    border-bottom: none;
+}
+.parental-control-setting-item h4 {
+    margin: 0 0 5px;
+    font-size: 16px;
+    color: var(--light);
+}
+.parental-control-setting-item p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--gray);
+}
+.ratings-summary {
+    font-style: italic;
+    margin-top: 5px !important;
+    font-size: 13px !important;
+    color: var(--youtube-light-gray) !important;
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.parental-btn, .parental-btn-secondary {
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+}
+.parental-btn {
+    background-color: var(--youtube-red);
+    color: white;
+}
+.parental-btn:hover {
+    background-color: var(--primary-dark);
+}
+.parental-btn-secondary {
+    background-color: var(--youtube-gray);
+    color: var(--light);
+}
+.parental-btn-secondary:hover {
+    background-color: var(--dark-3);
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    flex-shrink: 0;
+}
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--dark-3);
+    transition: .4s;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+input:checked + .slider {
+    background-color: var(--youtube-red);
+}
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--youtube-red);
+}
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+.slider.round {
+    border-radius: 34px;
+}
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Ratings Select Modal */
+.ratings-select-content .modal-body {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+#ratings-checkbox-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.rating-category-title {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--youtube-red);
+    margin-top: 10px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--dark-3);
+}
+.rating-checkbox-label {
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    cursor: pointer;
+    font-size: 16px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.rating-checkbox-label input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 25px;
+    width: 25px;
+    background-color: var(--dark-3);
+    border-radius: 4px;
+    border: 1px solid var(--gray);
+}
+.rating-checkbox-label:hover input ~ .checkmark {
+    background-color: var(--dark-2);
+}
+.rating-checkbox-label input:checked ~ .checkmark {
+    background-color: var(--youtube-red);
+    border-color: var(--youtube-red);
+}
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+.rating-checkbox-label input:checked ~ .checkmark:after {
+    display: block;
+}
+.rating-checkbox-label .checkmark:after {
+    left: 9px;
+    top: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+.ratings-select-content .modal-footer {
+    padding: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    border-top: 1px solid var(--dark-3);
+}
+
+/* PIN Entry Modal */
+.pin-entry-content .modal-body {
+    text-align: center;
+}
+.pin-entry-actions {
+    display: flex;
+    justify-content: space-evenly;
+    margin-top: 20px;
+}
+
+/* Footer */
+footer {
+    background-color: var(--youtube-dark);
+    padding: 30px 5%;
+    border-top: 1px solid var(--youtube-gray);
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.footer-logo {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--youtube-red);
+    margin-bottom: 15px;
+}
+
+.footer-about {
+    text-align: center;
+}
+
+.footer-title {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: var(--light);
+}
+
+.footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.footer-links a {
+    color: var(--youtube-light-gray);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.footer-links a:hover {
+    color: var(--youtube-red);
+}
+
+.social-links {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.social-links a {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--youtube-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--light);
+    transition: var(--transition);
+}
+
+.social-links a:hover {
+    background-color: var(--youtube-red);
+    transform: translateY(-5px);
+}
+
+.download-button {
+    display: inline-block;
+    padding: 15px 25px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #e50914;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    transition: background-color 0.3s;
+}
+
+.download-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.5s;
+}
+
+.download-button:hover::before {
+    transform: translate(-50%, -50%) scale(2);
+}
+
+.download-button:hover {
+    background-color: #b20710;
+}
+
+.download-image {
+    margin-top: 20px;
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+.adsense-banner {
+    height: 120px;
+    background: linear-gradient(45deg, #1a2a6c, #b21f1f, #1a2a6c);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 30px 0;
+    color: white;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 1px;
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--youtube-gray);
+    color: var(--youtube-light-gray);
+    font-size: 14px;
+}
+
+/* Performance Optimizations */
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.load-more-btn {
+    background-color: var(--youtube-red);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.load-more-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-3px);
+}
+
+.virtual-scroll-container {
+    position: relative;
+    height: calc(100vh - 300px);
+    overflow-y: auto;
+}
+
+.virtual-scroll-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: none;
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: var(--youtube-red);
+    animation: spin 1s ease-in-out infinite;
+    margin: 30px auto;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+    width: 80%;
+    max-width: 600px;
+    margin: 30px auto;
+}
+
+.progress-bar-text {
+    text-align: center;
+    margin-bottom: 10px;
+    color: var(--light-2);
+    font-size: 14px;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 20px;
+    background-color: var(--youtube-red);
+    border-radius: var(--radius);
+    transition: width 0.2s ease-out;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Pagination Styles */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+}
+
+.pagination-btn {
+    background-color: var(--youtube-gray);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    margin: 0 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.pagination-btn:hover {
+    background-color: var(--youtube-red);
+}
+
+.pagination-btn.active {
+    background-color: var(--youtube-red);
+}
+
+.pagination-btn:disabled {
+    background-color: var(--dark-3);
+    cursor: not-allowed;
+}
+
+@media (max-width: 576px) {
+    .pagination-btn:not(:first-child):not(:last-child) {
+        display: none;
+    }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+    /* .viewer-content grid adjustment already handled by min-width: 992px for multi-column */
+
+    .carousel {
+        height: 350px;
+    }
+
+    /* .related-videos width: 100%; No longer needed due to grid */
+}
+
+@media (max-width: 991px) { /* Changed from 992px to target below desktop grid */
+    .viewer-content {
+        grid-template-columns: 1fr; /* Stack columns for tablets and mobiles */
+    }
+    .related-videos {
+         margin-top: 20px; /* Reduced margin when stacked for tighter layout */
+    }
+    .carousel {
+        height: 300px;
+    }
+
+    .content-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    .search-container {
+        width: 50%;
+    }
+
+    .player-container {
+        /* Ensure player maintains aspect ratio and doesn't get too small */
+        min-height: 200px; /* Example minimum height for mobile */
+    }
+
+    .video-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .video-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .carousel {
+        height: 250px;
+    }
+
+    .content-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .search-container {
+        width: 60%;
+    }
+
+    .header-controls {
+        gap: 15px;
+    }
+
+    .carousel-content h2 {
+        font-size: 1.8rem;
+    }
+
+    .carousel-content p {
+        font-size: 14px;
+    }
+
+    /* Mobile search visibility */
+    .search-container {
+        position: relative;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .mobile-search-btn {
+        display: none;
+    }
+
+    .search-results {
+        max-height: 200px;
+    }
+
+    .search-container input {
+        background-color: rgba(0,0,0,0.9);
+    }
+
+    .search-input-container {
+        width: 100%;
+    }
+
+    .related-thumbnail {
+        width: 140px;
+        height: 80px;
+    }
+}
+
+@media (max-width: 576px) {
+    .logo {
+        font-size: 22px;
+    }
+
+    .carousel {
+        height: 200px;
+        margin-top: 20px;
+    }
+
+    .carousel-content {
+        padding: 15px;
+    }
+
+    .carousel-content h2 {
+        font-size: 1.4rem;
+    }
+
+    .carousel-content p {
+        display: none;
+    }
+
+    .filters-row {
+        flex-direction: column;
+    }
+
+    .view-toggle {
+        margin-top: 15px;
+    }
+
+    .content-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 15px;
+    }
+
+    .related-thumbnail {
+        width: 100px;
+    }
+
+    .video-title {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-card.list {
+        height: 140px; /* Fixed height for consistent card size */
+        align-items: center; /* Vertically align card-img and card-info */
+        overflow: hidden; /* Clip content that might overflow the fixed height */
+    }
+
+    .content-card.list .card-img {
+        width: 80px;  /* New smaller width for mobile */
+        height: 120px; /* New smaller height for mobile, maintains 2:3 aspect ratio */
+        flex-shrink: 0; /* Prevent image container from shrinking */
+        /* background-color: red; --- REMOVED DEBUG --- */
+    }
+
+    .content-card.list .card-img img {
+        /* background-color: blue; --- REMOVED DEBUG --- */
+        /* Ensure other img styles are still considered if this overrides the global one */
+        display: block;
+        width: 100%; /* This will be 80px */
+        height: 120px !important; /* Explicitly set height, using !important for emphasis - assess if !important still needed */
+        object-fit: cover;
+    }
+
+    .content-card.list .card-info {
+        padding: 10px 15px; /* Adjust padding for smaller card layout */
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Helps align content vertically if card is taller */
+    }
+
+    .content-card.list .card-title {
+        font-size: 15px; /* Slightly smaller title */
+        -webkit-line-clamp: 2;
+        max-height: calc(15px * 1.4 * 2); /* Corresponds to 2 lines */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        /* display: -webkit-box; and -webkit-box-orient: vertical; are global */
+    }
+
+    .content-card.list .card-meta {
+        font-size: 12px; /* Slightly smaller meta */
+        margin-top: 4px; /* Space between title and meta */
+    }
+
+    .content-card.list .card-description {
+        font-size: 13px;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2; /* Limit to 2 lines */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 4px; /* Space between meta and description */
+        /* max-height: calc(13px * 1.4 * 2); /* Fallback for non-webkit */
+    }
+}
+
+/* Smart TV and Large Screens */
+@media (min-width: 1600px) {
+    .carousel {
+        height: 600px;
+    }
+
+    .carousel-content h2 {
+        font-size: 3.5rem;
+    }
+
+    .carousel-content p {
+        font-size: 1.2rem;
+        max-width: 800px;
+    }
+
+    .content-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 40px;
+    }
+
+    .section-title {
+        font-size: 32px;
+    }
+
+    .filter-select {
+        padding: 15px 20px;
+        font-size: 18px;
+    }
+
+    .viewer-content {
+        grid-template-columns: 3fr 1fr;
+        height: calc(100vh - 250px);
+    }
+
+    .video-title {
+        font-size: 28px;
+    }
+
+    .video-description {
+        font-size: 18px;
+    }
+
+    .server-btn, .episode-selector {
+        font-size: 18px;
+        padding: 12px 20px;
+    }
+
+    .related-title {
+        font-size: 24px;
+    }
+
+    .season-card img {
+        height: 240px; /* Increased height for very large screens */
+    }
+
+    .related-videos {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+.mobile-search-btn {
+    display: none;
+}
+
+/* Search Visibility: Default to hidden on mobile, shown on desktop */
+/* Desktop: .search-container is display:flex by default */
+
+@media (max-width: 768px) {
+  .search-container {
+    display: none; /* Hidden by default on mobile */
+    flex-direction: column; /* Adjust layout for mobile if needed when shown */
+    width: 100%; /* Full width on mobile when shown */
+    position: absolute; /* Position it over content */
+    top: var(--header-height); /* Below the header */
+    left: 0;
+    background-color: var(--youtube-dark); /* Or a slightly different shade for dropdown */
+    padding: 10px;
+    z-index: 1001; /* Above other header items, below modal */
+    box-shadow: var(--shadow);
+  }
+
+  .search-container.show {
+    display: flex !important; /* Use flex when shown on mobile */
+  }
+
+  .search-container input {
+    width: 100%; /* Full width input on mobile */
+  }
+
+  .mobile-search-btn {
+    display: flex !important; /* Show mobile search button */
+    align-items: center;
+    justify-content: center;
+  }
+
+  .user-profile {
+      display: none;
+  }
+
+    .hamburger-btn {
+        display: block;
+    }
+
+    .mobile-filters-menu {
+        display: none;
+        position: absolute;
+        top: var(--header-height);
+        left: 0;
+        width: 100%;
+        background-color: var(--youtube-dark);
+        padding: 20px;
+        z-index: 999;
+        box-shadow: var(--shadow);
+    }
+
+    .mobile-filters-menu.show {
+        display: block;
+    }
+}
+
+/* Desktop-specific if any further overrides needed, but base style should cover it. */
+/* @media (min-width: 769px) { ... } */
+
+/* Default state for mobile search button (hidden on desktop) */
+.mobile-search-btn {
+  display: none; /* Hidden by default, overridden by media query for mobile */
+  background: var(--youtube-red);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.mobile-search-btn:hover {
+  background: var(--primary-dark);
+  transform: scale(1.05);
+}
+
+@media (max-width: 480px) {
+  .content-card.grid .card-info {
+    min-height: 100px;
+    justify-content: flex-start; /* Align content to top */
+  }
+
+  .content-card.grid .card-meta {
+    /* display: none; */ /* Hide meta for more title space on small mobile grid - Overridden to show meta */
+    display: flex !important; /* Ensure it's shown and stacked, overriding any other display properties. !important to be sure. */
+    flex-direction: column;
+    align-items: center;
+    gap: 4px; /* Consistent with other grid meta styling */
+  }
+
+          /* General card title adjustments for very small screens */
+          .card-title { /* Applies to both grid and list unless overridden */
+    font-size: 13px;
+            -webkit-line-clamp: 2; /* Ensure 2 lines */
+            /* height was !important, use max-height if possible for flexibility */
+            max-height: calc(13px * 1.4 * 2);
+            overflow: hidden !important; /* Retained from previous fix, but check if needed */
+          }
+          /* Specific override for list view title if needed, or let general rule apply */
+          .content-card.list .card-title {
+             font-size: 14px; /* Example: slightly larger than grid title on smallest screens */
+             max-height: calc(14px * 1.4 * 2);
+  }
+
+
+  .card-meta { /* This rule still applies to .content-card.list .card-meta */
+            font-size: 11px; /* Already set */
+             margin-top: 3px; /* Adjust margin */
+  }
+           .content-card.list .card-meta { /* Specific for list view on smallest screens */
+               font-size: 11px;
+           }
+
+
+  .content-card.list .card-description {
+    font-size: 12px; /* Adjust description font size for small screens */
+    line-height: 1.4; /* Ensure good line spacing for readability */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2; /* Limit to 2 lines */
+    overflow: hidden;
+    text-overflow: ellipsis;
+            margin-top: 3px; /* Adjust margin */
+            /* max-height: calc(12px * 1.4 * 2); /* Fallback for non-webkit */
+    /* Commented out trailing slash from merge error: */
+  }
+  /* Merged from second @media (max-width: 480px) block */
+  .content-card.grid .card-info { /* This was already defined, ensuring it's the same or merged correctly */
+    min-height: 100px;
+    justify-content: flex-start; /* Align content to top */
+  }
+
+  .content-card.grid .card-meta { /* This was already defined, ensuring it's the same or merged correctly */
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 576px) {
+    /* Original content from first @media (max-width: 576px) block */
+    .logo {
+        font-size: 22px;
+    }
+    .carousel {
+        height: 200px;
+        margin-top: 20px;
+    }
+    .carousel-content {
+        padding: 15px;
+    }
+    .carousel-content h2 {
+        font-size: 1.4rem;
+    }
+    .carousel-content p {
+        display: none;
+    }
+    .filters-row {
+        flex-direction: column;
+    }
+    .view-toggle {
+        margin-top: 15px;
+    }
+    .content-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 15px;
+    }
+    .related-thumbnail {
+        width: 100px;
+    }
+    .video-title { /* This was for .video-title general */
+        font-size: 18px;
+    }
+     .content-card.list {
+        height: 140px;
+        align-items: center;
+        overflow: hidden;
+    }
+    .content-card.list .card-img {
+        width: 80px;
+        height: 120px;
+        flex-shrink: 0;
+    }
+    .content-card.list .card-img img {
+        display: block;
+        width: 100%;
+        height: 120px !important;
+        object-fit: cover;
+    }
+    .content-card.list .card-info {
+        padding: 10px 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .content-card.list .card-title {
+        font-size: 15px;
+        -webkit-line-clamp: 2;
+        max-height: calc(15px * 1.4 * 2);
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .content-card.list .card-meta {
+        font-size: 12px;
+        margin-top: 4px;
+    }
+    .content-card.list .card-description { /* This was already defined in another @media (max-width: 576px) block, ensure it's consistent or merged */
+        font-size: 13px;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 4px;
+    }
+
+    /* Merged from second @media (max-width: 576px) block */
+    .back-button {
+        padding: 12px 20px; /* Increased padding for easier tapping */
+        font-size: 16px;    /* Slightly larger font for visibility */
+    }
+}
+
+
+
+
+/* Download Options Modal Styles */
+#downloadOptionsModal .modal-content {
+    background-color: var(--youtube-dark-gray); /* Using a variable from the existing theme */
+    color: var(--light);
+    padding: 25px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    width: 90%;
+    max-width: 550px; /* Slightly wider for better link display */
+    position: relative; /* For absolute positioning of close button */
+    text-align: left; /* Align text to the left for list items */
+}
+
+#downloadOptionsModal .modal-header {
+    display: flex;
+    justify-content: space-between; /* Pushes title and close button apart */
+    align-items: center;
+    border-bottom: 1px solid var(--youtube-gray);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+#downloadModalTitle {
+    font-size: 22px; /* Slightly larger title */
+    font-weight: 600;
+    margin: 0; /* Remove default margin */
+    color: var(--light); /* Ensure title color matches theme */
+}
+
+#closeDownloadModalBtn {
+    background: none;
+    border: none;
+    color: var(--youtube-light-gray);
+    font-size: 30px; /* Larger close button */
+    cursor: pointer;
+    padding: 0 5px; /* Add some padding for easier clicking */
+    line-height: 1; /* Ensure it aligns well */
+    position: absolute; /* Position relative to modal-content */
+    top: 10px;
+    right: 15px;
+}
+#closeDownloadModalBtn:hover {
+    color: var(--youtube-red);
+}
+
+#downloadModalBody ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 350px; /* Increased max height */
+    overflow-y: auto;
+}
+
+#downloadModalBody li {
+    margin-bottom: 12px; /* Spacing between links */
+}
+
+#downloadModalBody li a { /* Target the anchor within the list item */
+    display: block; /* Make links take full width */
+    padding: 12px 18px; /* Increased padding */
+    background-color: var(--youtube-red);
+    color: white !important; /* Ensure text is white */
+    text-decoration: none !important; /* Ensure no underline */
+    border-radius: var(--radius);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-size: 16px; /* Clearer font size */
+    text-align: center; /* Center text in button */
+    border: none; /* Remove any default anchor border */
+}
+
+#downloadModalBody li a:hover { /* Hover state for the anchor */
+    background-color: var(--primary-dark); /* Using a theme variable */
+    transform: translateY(-2px); /* Subtle hover effect */
+    color: white !important;
+}
+
+/* Custom Next/Previous Episode Buttons Styling for Plyr */
+#prev-episode-btn, #next-episode-btn {
+    padding: 0;
+    width: auto;
+    margin-right: 5px; /* Space before next control (e.g., settings) */
+    /* display: none; /* Initially hidden, JS will manage visibility */
+}
+
+/* Icon styling within buttons - Plyr's default icon styling should apply if icons are standard */
+/* #prev-episode-btn i, #next-episode-btn i {} */
+
+/* Disabled state for custom buttons */
+#prev-episode-btn:disabled, #next-episode-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Optional: Custom hover effect if needed, otherwise Plyr's default hover on .plyr__control will apply */
+/*
+#prev-episode-btn:not(:disabled):hover, #next-episode-btn:not(:disabled):hover {
+    background: var(--youtube-red);
+    color: #fff;
+}
+*/
+
+.hamburger-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--light);
+    font-size: 22px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .user-profile {
+        display: none;
+    }
+
+    .hamburger-btn {
+        display: block;
+    }
+
+    .mobile-filters-menu {
+        display: none;
+        position: absolute;
+        top: var(--header-height);
+        left: 0;
+        width: 100%;
+        background-color: var(--youtube-dark);
+        padding: 20px;
+        z-index: 999;
+        box-shadow: var(--shadow);
+    }
+
+    .mobile-filters-menu.show {
+        display: block;
+    }
+}
+
+/* Bottom Navigation Bar Styles */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--youtube-dark);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--gray);
+    text-decoration: none;
+    font-size: 12px;
+    transition: color 0.3s ease;
+}
+
+.nav-item i {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.nav-item.active, .nav-item:hover {
+    color: var(--youtube-red);
+}
+
+
+
+@media (max-width: 768px) {
+    #universal-server-selector {
+        min-width: 120px !important;
+        max-width: 52vw !important;
+        max-height: 32vh !important;
+        padding: 6px !important;
+        top: 6px !important;
+        right: 6px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        overscroll-behavior: contain;
+    }
+    #universal-server-selector .server-item {
+        padding: 4px 6px !important;
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+    }
+    #universal-server-selector > div:first-child {
+        font-size: 12px !important;
+        margin-bottom: 8px !important;
+        padding-bottom: 6px !important;
+    }
+    #embedded-server-selector {
+        min-width: 120px !important;
+        max-width: 56vw !important;
+        max-height: 34vh !important;
+        padding: 6px !important;
+        top: 6px !important;
+        right: 6px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        overscroll-behavior: contain;
+    }
+    #embedded-server-selector .server-item {
+        padding: 4px 6px !important;
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+    }
+    #server-selector-indicator {
+        font-size: 10px !important;
+        padding: 4px 8px !important;
+        left: 6px !important;
+        top: 6px !important;
+    }
+}
+@media (max-width: 480px) {
+    #universal-server-selector {
+        max-width: 50vw !important;
+        max-height: 28vh !important;
+    }
+    #embedded-server-selector {
+        max-width: 52vw !important;
+        max-height: 30vh !important;
+    }
+}
