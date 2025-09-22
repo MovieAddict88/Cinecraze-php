@@ -1,3 +1,154 @@
+<?php
+include_once __DIR__ . '/admin/config.php';
+
+$playlist = ['Categories' => []];
+
+// Fetch movies
+$movies_category = ['MainCategory' => 'Movies', 'SubCategories' => [], 'Entries' => []];
+$stmt_movies = $conn->prepare("SELECT * FROM movies");
+$stmt_movies->execute();
+$movie_result = $stmt_movies->get_result();
+
+if ($movie_result) {
+    $stmt_servers = $conn->prepare("SELECT * FROM servers WHERE content_id = ? AND content_type = 'movie'");
+    $stmt_genres = $conn->prepare("SELECT g.name FROM genres g JOIN movie_genres mg ON g.id = mg.genre_id WHERE mg.movie_id = ?");
+
+    while ($row = $movie_result->fetch_assoc()) {
+        $servers = [];
+        $stmt_servers->bind_param("i", $row['id']);
+        $stmt_servers->execute();
+        $server_result = $stmt_servers->get_result();
+        if ($server_result) {
+            while ($server_row = $server_result->fetch_assoc()) {
+                $servers[] = [
+                    'name' => $server_row['name'],
+                    'url' => $server_row['url'],
+                    'quality' => $server_row['quality'],
+                    'type' => $server_row['server_type']
+                ];
+            }
+        }
+
+        $genres = [];
+        $stmt_genres->bind_param("i", $row['id']);
+        $stmt_genres->execute();
+        $genre_result = $stmt_genres->get_result();
+        if ($genre_result) {
+            while ($genre_row = $genre_result->fetch_assoc()) {
+                $genres[] = $genre_row['name'];
+                if (!in_array($genre_row['name'], $movies_category['SubCategories'])) {
+                    $movies_category['SubCategories'][] = $genre_row['name'];
+                }
+            }
+        }
+
+        $movies_category['Entries'][] = [
+            'Title' => $row['title'],
+            'SubCategory' => $genres[0] ?? 'General',
+            'Country' => '', // This data is not in the db schema yet
+            'Description' => $row['description'],
+            'Poster' => 'https://image.tmdb.org/t/p/w500' . $row['poster_path'],
+            'Thumbnail' => 'https://image.tmdb.org/t/p/w500' . $row['backdrop_path'],
+            'Rating' => $row['vote_average'],
+            'Duration' => $row['duration'] . ' min',
+            'Year' => date('Y', strtotime($row['release_date'])),
+            'parentalRating' => $row['parental_rating'],
+            'Servers' => $servers
+        ];
+    }
+    $stmt_servers->close();
+    $stmt_genres->close();
+}
+$stmt_movies->close();
+$playlist['Categories'][] = $movies_category;
+
+// Fetch series
+$series_category = ['MainCategory' => 'TV Series', 'SubCategories' => [], 'Entries' => []];
+$stmt_series = $conn->prepare("SELECT * FROM series");
+$stmt_series->execute();
+$series_result = $stmt_series->get_result();
+if ($series_result) {
+    $stmt_seasons = $conn->prepare("SELECT * FROM seasons WHERE series_id = ? ORDER BY season_number ASC");
+    $stmt_episodes = $conn->prepare("SELECT * FROM episodes WHERE season_id = ? ORDER BY episode_number ASC");
+    $stmt_servers = $conn->prepare("SELECT * FROM servers WHERE content_id = ? AND content_type = 'episode'");
+    $stmt_genres = $conn->prepare("SELECT g.name FROM genres g JOIN series_genres sg ON g.id = sg.genre_id WHERE sg.series_id = ?");
+
+    while ($row = $series_result->fetch_assoc()) {
+        $seasons = [];
+        $stmt_seasons->bind_param("i", $row['id']);
+        $stmt_seasons->execute();
+        $season_result = $stmt_seasons->get_result();
+        if ($season_result) {
+            while ($season_row = $season_result->fetch_assoc()) {
+                $episodes = [];
+                $stmt_episodes->bind_param("i", $season_row['id']);
+                $stmt_episodes->execute();
+                $episode_result = $stmt_episodes->get_result();
+                if ($episode_result) {
+                    while ($episode_row = $episode_result->fetch_assoc()) {
+                        $servers = [];
+                        $stmt_servers->bind_param("i", $episode_row['id']);
+                        $stmt_servers->execute();
+                        $server_result = $stmt_servers->get_result();
+                        if ($server_result) {
+                            while ($server_row = $server_result->fetch_assoc()) {
+                                $servers[] = ['name' => $server_row['name'], 'url' => $server_row['url']];
+                            }
+                        }
+                        $episodes[] = [
+                            'Episode' => $episode_row['episode_number'],
+                            'Title' => $episode_row['title'],
+                            'Duration' => $episode_row['duration'] . ' min',
+                            'Description' => $episode_row['description'],
+                            'Thumbnail' => 'https://image.tmdb.org/t/p/w500' . $episode_row['still_path'],
+                            'Servers' => $servers
+                        ];
+                    }
+                }
+                $seasons[] = [
+                    'Season' => $season_row['season_number'],
+                    'SeasonPoster' => 'https://image.tmdb.org/t/p/w500' . $season_row['poster_path'],
+                    'Episodes' => $episodes
+                ];
+            }
+        }
+
+        $genres = [];
+        $stmt_genres->bind_param("i", $row['id']);
+        $stmt_genres->execute();
+        $genre_result = $stmt_genres->get_result();
+        if ($genre_result) {
+            while ($genre_row = $genre_result->fetch_assoc()) {
+                $genres[] = $genre_row['name'];
+                if (!in_array($genre_row['name'], $series_category['SubCategories'])) {
+                    $series_category['SubCategories'][] = $genre_row['name'];
+                }
+            }
+        }
+
+        $series_category['Entries'][] = [
+            'Title' => $row['title'],
+            'SubCategory' => $genres[0] ?? 'General',
+            'Country' => '',
+            'Description' => $row['description'],
+            'Poster' => 'https://image.tmdb.org/t/p/w500' . $row['poster_path'],
+            'Thumbnail' => 'https://image.tmdb.org/t/p/w500' . $row['backdrop_path'],
+            'Rating' => $row['vote_average'],
+            'Year' => date('Y', strtotime($row['first_air_date'])),
+            'parentalRating' => $row['parental_rating'],
+            'Seasons' => $seasons
+        ];
+    }
+    $stmt_seasons->close();
+    $stmt_episodes->close();
+    $stmt_servers->close();
+    $stmt_genres->close();
+}
+$stmt_series->close();
+$playlist['Categories'][] = $series_category;
+
+$cineData = json_encode($playlist);
+?>
       <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3357,7 +3508,7 @@
         // TMDB API removed - using local data only
         
         // SAMPLE DATA - Replace this with your actual data source
-        let cineData = null;
+        let cineData = <?php echo $cineData; ?>;
         let cachedContent = [];
         let currentPage = 1;
         let totalPages = 0;
@@ -3585,16 +3736,14 @@
 
             setupParentalControls(); // Setup parental controls first
             createEpisodeNavigationButtons(); // Create buttons before they might be needed
-            fetchData().then(() => {
-                renderCarousel();
-                renderContentFilters();
-                renderContent();
-                setupEventListeners();
-                setupMobileBackButton(); // Setup mobile back button support
-                updateCarousel();
-                setupLazyLoading();
-                history.replaceState({ page: 'browse' }, 'Browse Content', window.location.pathname + window.location.search);
-            });
+            renderCarousel();
+            renderContentFilters();
+            renderContent();
+            setupEventListeners();
+            setupMobileBackButton(); // Setup mobile back button support
+            updateCarousel();
+            setupLazyLoading();
+            history.replaceState({ page: 'browse' }, 'Browse Content', window.location.pathname + window.location.search);
         }
         
         // Helpers for segmented playlist fetching
@@ -3673,99 +3822,6 @@
             }
             if (!foundAny) return null;
             return mergeCineDataSegments(segments);
-        }
-        
-        // Enhanced data fetching with IndexedDB caching
-        async function fetchData() {
-            let db;
-            try {
-                db = await dbUtil.open();
-                const cachedData = await dbUtil.get(db, PLAYLIST_KEY);
-
-                if (cachedData) {
-                    cineData = cachedData;
-                    console.log("✅ Loaded data from IndexedDB cache");
-                    return; // Exit early if we have cached data
-                }
-
-                console.log("ℹ️ No cache found in IndexedDB. Fetching from network...");
-                elements.progressBarContainer.style.display = 'block';
-                elements.loadingSpinner.style.display = 'none';
-                
-                const primaryUrl = "https://github.com/MovieAddict88/Movie-Source/raw/main/playlist.json";
-                const fallbackUrls = [
-                    "https://raw.githubusercontent.com/MovieAddict88/Movie-Source/main/playlist.json",
-                    "https://cdn.jsdelivr.net/gh/MovieAddict88/Movie-Source@main/playlist.json",
-                    "./playlist.json",
-                    "./data/playlist.json"
-                ];
-                
-                const allCandidateUrls = [primaryUrl, ...fallbackUrls];
-                for (const candidate of allCandidateUrls) {
-                    try {
-                        console.log(`🔎 Trying segmented playlists from: ${getBasePathFromUrl(candidate)}`);
-                        const segmented = await tryFetchSegmented(candidate);
-                        if (segmented && segmented.Categories && segmented.Categories.length > 0) {
-                            cineData = segmented;
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached segmented data from base: ${getBasePathFromUrl(candidate)}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Segmented fetch failed for ${candidate}`, err);
-                    }
-                    try {
-                        console.log(`🔄 Trying monolithic playlist: ${candidate}`);
-                        elements.progressBarText.textContent = `Trying monolithic playlist...`;
-                        const response = await fetch(withCacheBuster(candidate));
-                        if (response.ok) {
-                            cineData = await response.json();
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached data from: ${candidate}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Monolithic fetch failed for ${candidate}`, err);
-                    }
-                }
-                
-                throw new Error("All data sources failed");
-                
-            } catch (err) {
-                console.error("❌ All data sources failed:", err);
-                
-                const errorMessage = document.createElement('div');
-                errorMessage.style.cssText = `
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: var(--youtube-gray);
-                    padding: 20px;
-                    border-radius: 8px;
-                    text-align: center;
-                    z-index: 10000;
-                    max-width: 400px;
-                `;
-                errorMessage.innerHTML = `
-                    <h3>⚠️ Data Loading Failed</h3>
-                    <p>Unable to load content data. Please check your internet connection and try again.</p>
-                    <button onclick="this.parentElement.remove(); window.location.reload();" style="
-                        background: var(--primary);
-                        color: white;
-                        border: none;
-                        padding: 10px 20px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        margin-top: 10px;
-                    ">Retry</button>
-                `;
-                document.body.appendChild(errorMessage);
-            } finally {
-                if (db) db.close();
-                elements.progressBarContainer.style.display = 'none';
-                elements.loadingSpinner.style.display = 'none';
-            }
         }
         
         // TMDB API function removed - using local data only
