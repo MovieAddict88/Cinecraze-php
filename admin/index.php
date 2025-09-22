@@ -6,14 +6,21 @@
     <div class="card">
         <h2>🔑 API Key Management</h2>
         <div class="form-group">
-            <label for="api-key-select">Select TMDB API Key (for backup detection avoidance)</label>
-            <select id="api-key-select" onchange="switchApiKey()">
-                <option value="primary">Primary Key (***61)</option>
-                <option value="backup1">Backup Key 1 (***69)</option>
-                <option value="backup2">Backup Key 2 (***3f)</option>
-                <option value="backup3">Backup Key 3 (***8d)</option>
+        <label for="api-key-select">Select TMDB API Key</label>
+        <select id="api-key-select">
+            <?php
+            if (defined('TMDB_API_KEYS') && is_array(TMDB_API_KEYS)) {
+                foreach (TMDB_API_KEYS as $index => $key) {
+                    // Display the key in a user-friendly, secure way
+                    $displayName = "API Key " . ($index + 1) . " (..." . substr($key, -4) . ")";
+                    echo "<option value=\"{$index}\">{$displayName}</option>";
+                }
+            } else {
+                echo "<option value=\"\">API Keys not configured</option>";
+            }
+            ?>
             </select>
-            <small class="api-status">Current: <span id="current-api-status">Primary (Active)</span></small>
+        <small class="api-status">Select a key to use for TMDB API requests.</small>
         </div>
     </div>
 

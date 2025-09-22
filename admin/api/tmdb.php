@@ -5,6 +5,17 @@ header('Content-Type: application/json');
 
 $response = ['status' => 'error', 'message' => 'Invalid request'];
 
+// Get the API key index from the request, default to 0
+$apiKeyIndex = isset($_GET['api_key_index']) ? intval($_GET['api_key_index']) : 0;
+
+// Validate the index and get the key
+if (!defined('TMDB_API_KEYS') || !isset(TMDB_API_KEYS[$apiKeyIndex])) {
+    $response['message'] = 'Invalid API key configuration or index.';
+    echo json_encode($response);
+    exit;
+}
+$apiKey = TMDB_API_KEYS[$apiKeyIndex];
+
 if (isset($_GET['type']) && isset($_GET['id'])) {
     $type = $_GET['type'];
     $id = intval($_GET['id']);
@@ -13,9 +24,9 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
         $tmdb_url = "https://api.themoviedb.org/3/";
 
         if ($type === 'movie') {
-            $tmdb_url .= "movie/{$id}?api_key=" . TMDB_API_KEY . "&append_to_response=credits,videos,release_dates";
+            $tmdb_url .= "movie/{$id}?api_key=" . $apiKey . "&append_to_response=credits,videos,release_dates";
         } else { // series
-            $tmdb_url .= "tv/{$id}?api_key=" . TMDB_API_KEY . "&append_to_response=credits,videos,content_ratings";
+            $tmdb_url .= "tv/{$id}?api_key=" . $apiKey . "&append_to_response=credits,videos,content_ratings";
         }
 
         // Use cURL to fetch data from TMDB API
@@ -155,7 +166,7 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
                             }
 
                             // Fetch episodes for the season
-                            $episodes_url = "https://api.themoviedb.org/3/tv/{$id}/season/{$season_data['season_number']}?api_key=" . TMDB_API_KEY;
+                            $episodes_url = "https://api.themoviedb.org/3/tv/{$id}/season/{$season_data['season_number']}?api_key=" . $apiKey;
                             $ch_ep = curl_init();
                             curl_setopt($ch_ep, CURLOPT_URL, $episodes_url);
                             curl_setopt($ch_ep, CURLOPT_RETURNTRANSFER, 1);

@@ -62,11 +62,12 @@
                 return;
             }
 
+            const apiKeyIndex = document.getElementById('api-key-select').value;
             const loadingSpinner = document.getElementById(`${type}-loading`);
             loadingSpinner.style.display = 'inline-block';
 
             try {
-                const response = await fetch(`api/tmdb.php?type=${type}&id=${id}`);
+                const response = await fetch(`api/tmdb.php?type=${type}&id=${id}&api_key_index=${apiKeyIndex}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -359,13 +360,14 @@
                 return;
             }
 
+            const apiKeyIndex = document.getElementById('api-key-select').value;
             const loadingSpinner = document.getElementById('search-loading');
             loadingSpinner.style.display = 'inline-block';
             const resultsGrid = document.getElementById('search-results');
             resultsGrid.innerHTML = '';
 
             try {
-                const response = await fetch(`api/search_tmdb.php?type=${type}&query=${query}`);
+                const response = await fetch(`api/search_tmdb.php?type=${type}&query=${query}&api_key_index=${apiKeyIndex}`);
                 const result = await response.json();
 
                 if (result.status === 'success' && result.data.results) {

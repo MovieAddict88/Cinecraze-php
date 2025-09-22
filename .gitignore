@@ -1,0 +1,5 @@
+# Ignore the live config file with credentials
+admin/config.php
+
+# Ignore Composer dependencies
+vendor/
