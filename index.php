@@ -3685,52 +3685,26 @@
                 if (cachedData) {
                     cineData = cachedData;
                     console.log("✅ Loaded data from IndexedDB cache");
-                    return; // Exit early if we have cached data
+                    return;
                 }
 
-                console.log("ℹ️ No cache found in IndexedDB. Fetching from network...");
-                elements.progressBarContainer.style.display = 'block';
-                elements.loadingSpinner.style.display = 'none';
-                
-                const primaryUrl = "https://github.com/MovieAddict88/Movie-Source/raw/main/playlist.json";
-                const fallbackUrls = [
-                    "https://raw.githubusercontent.com/MovieAddict88/Movie-Source/main/playlist.json",
-                    "https://cdn.jsdelivr.net/gh/MovieAddict88/Movie-Source@main/playlist.json",
-                    "./playlist.json",
-                    "./data/playlist.json"
-                ];
-                
-                const allCandidateUrls = [primaryUrl, ...fallbackUrls];
-                for (const candidate of allCandidateUrls) {
-                    try {
-                        console.log(`🔎 Trying segmented playlists from: ${getBasePathFromUrl(candidate)}`);
-                        const segmented = await tryFetchSegmented(candidate);
-                        if (segmented && segmented.Categories && segmented.Categories.length > 0) {
-                            cineData = segmented;
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached segmented data from base: ${getBasePathFromUrl(candidate)}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Segmented fetch failed for ${candidate}`, err);
-                    }
-                    try {
-                        console.log(`🔄 Trying monolithic playlist: ${candidate}`);
-                        elements.progressBarText.textContent = `Trying monolithic playlist...`;
-                        const response = await fetch(withCacheBuster(candidate));
-                        if (response.ok) {
-                            cineData = await response.json();
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached data from: ${candidate}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Monolithic fetch failed for ${candidate}`, err);
-                    }
+                console.log("ℹ️ No cache found. Fetching from the CineCraze API...");
+                elements.loadingSpinner.style.display = 'block';
+
+                const response = await fetch('api/get_public_content.php');
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
                 }
                 
-                throw new Error("All data sources failed");
+                cineData = await response.json();
                 
+                if (!cineData || !cineData.Categories) {
+                     throw new Error("Invalid data structure from API.");
+                }
+
+                await dbUtil.set(db, PLAYLIST_KEY, cineData);
+                console.log("✅ Loaded and cached data from the API.");
+
             } catch (err) {
                 console.error("❌ All data sources failed:", err);
                 
@@ -4319,8 +4293,9 @@
                 currentEpisode = null;
                 currentSeries = content;
 
-                if (content.type !== 'series' && content.Servers) {
+                if (content.type !== 'series' && content.Servers && content.Servers.length > 0) {
                     updatePlayerSource(content.Servers);
+                    populateServerSelector(content.Servers, content.Servers[0]);
                 }
                 elements.seasonsGrid.innerHTML = '';
 
@@ -6833,6 +6808,37 @@ async function switchToServer(server, allServers) {
         }
         
         // Play episode
+        function populateServerSelector(servers, currentServer) {
+            const selectorContainer = elements.serverSelectorContainer;
+            const selector = elements.serverSelector;
+
+            if (!servers || servers.length <= 1) {
+                selectorContainer.style.display = 'none';
+                return;
+            }
+
+            selector.innerHTML = '';
+            servers.forEach(server => {
+                const option = document.createElement('option');
+                option.value = server.url;
+                option.textContent = server.name;
+                if (server.url === currentServer.url) {
+                    option.selected = true;
+                }
+                selector.appendChild(option);
+            });
+
+            selector.onchange = (e) => {
+                const selectedUrl = e.target.value;
+                const selectedServer = servers.find(s => s.url === selectedUrl);
+                if (selectedServer) {
+                    playUrl(selectedServer.url, servers);
+                }
+            };
+
+            selectorContainer.style.display = 'block';
+        }
+
         function playEpisode(episode, autoplay = false) {
             currentEpisode = episode;
 
@@ -6842,9 +6848,14 @@ async function switchToServer(server, allServers) {
             // Update the description to the episode description
             elements.viewerDescription.textContent = episode.Description || currentSeries.Description;
 
-            // Update quality selector
-            if (episode.Servers) {
+            // Update player source and server selector
+            if (episode.Servers && episode.Servers.length > 0) {
                 updatePlayerSource(episode.Servers);
+                populateServerSelector(episode.Servers, episode.Servers[0]);
+            } else {
+                // If no servers, clear the player and hide selector
+                if (playerInstance) playerInstance.source = null;
+                elements.serverSelectorContainer.style.display = 'none';
             }
 
             // Ensure the episode selector reflects the current episode
