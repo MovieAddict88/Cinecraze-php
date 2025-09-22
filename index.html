@@ -2787,7 +2787,7 @@
             <button class="theme-toggle" id="theme-toggle">
                 <i class="fas fa-moon"></i>
             </button>
-            <div class="user-profile">
+            <div class="user-profile" onclick="window.location.href='admin/login.php'">
                 <i class="fas fa-user"></i>
             </div>
             <button class="hamburger-btn" id="hamburger-btn">
@@ -3156,6 +3156,7 @@
         </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
     <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.7/shaka-player.compiled.js"></script>
@@ -3675,61 +3676,21 @@
             return mergeCineDataSegments(segments);
         }
         
-        // Enhanced data fetching with IndexedDB caching
+        // Enhanced data fetching with API
         async function fetchData() {
-            let db;
             try {
-                db = await dbUtil.open();
-                const cachedData = await dbUtil.get(db, PLAYLIST_KEY);
-
-                if (cachedData) {
-                    cineData = cachedData;
-                    console.log("✅ Loaded data from IndexedDB cache");
-                    return; // Exit early if we have cached data
-                }
-
-                console.log("ℹ️ No cache found in IndexedDB. Fetching from network...");
+                console.log("ℹ️ Fetching data from API...");
                 elements.progressBarContainer.style.display = 'block';
                 elements.loadingSpinner.style.display = 'none';
                 
-                const primaryUrl = "https://github.com/MovieAddict88/Movie-Source/raw/main/playlist.json";
-                const fallbackUrls = [
-                    "https://raw.githubusercontent.com/MovieAddict88/Movie-Source/main/playlist.json",
-                    "https://cdn.jsdelivr.net/gh/MovieAddict88/Movie-Source@main/playlist.json",
-                    "./playlist.json",
-                    "./data/playlist.json"
-                ];
-                
-                const allCandidateUrls = [primaryUrl, ...fallbackUrls];
-                for (const candidate of allCandidateUrls) {
-                    try {
-                        console.log(`🔎 Trying segmented playlists from: ${getBasePathFromUrl(candidate)}`);
-                        const segmented = await tryFetchSegmented(candidate);
-                        if (segmented && segmented.Categories && segmented.Categories.length > 0) {
-                            cineData = segmented;
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached segmented data from base: ${getBasePathFromUrl(candidate)}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Segmented fetch failed for ${candidate}`, err);
-                    }
-                    try {
-                        console.log(`🔄 Trying monolithic playlist: ${candidate}`);
-                        elements.progressBarText.textContent = `Trying monolithic playlist...`;
-                        const response = await fetch(withCacheBuster(candidate));
-                        if (response.ok) {
-                            cineData = await response.json();
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached data from: ${candidate}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Monolithic fetch failed for ${candidate}`, err);
-                    }
+                const response = await fetch('api/content.php');
+                if (response.ok) {
+                    cineData = await response.json();
+                    console.log(`✅ Loaded data from API`);
+                    return;
                 }
                 
-                throw new Error("All data sources failed");
+                throw new Error("API request failed");
                 
             } catch (err) {
                 console.error("❌ All data sources failed:", err);
@@ -3762,7 +3723,6 @@
                 `;
                 document.body.appendChild(errorMessage);
             } finally {
-                if (db) db.close();
                 elements.progressBarContainer.style.display = 'none';
                 elements.loadingSpinner.style.display = 'none';
             }
@@ -4319,40 +4279,61 @@
                 currentEpisode = null;
                 currentSeries = content;
 
-                if (content.type !== 'series' && content.Servers) {
-                    updatePlayerSource(content.Servers);
-                }
                 elements.seasonsGrid.innerHTML = '';
+                currentSeries = content; // Set current series context early
 
-                // ensureEpisodeButtonsInControls(); // This call is removed, logic moved to updateNavigationButtonsState
-
-                if (content.type === 'series' && content.Seasons) {
+                if (content.type === 'series') {
+                    // Show a loading indicator for seasons
+                    elements.seasonsGrid.innerHTML = '<div class="loading-spinner" style="display: block; margin: 20px auto;"></div>';
+                    elements.seasonSelector.style.display = 'block';
                     if (elements.relatedVideosContainer) {
                         elements.relatedVideosContainer.prepend(elements.seasonSelector);
                         elements.relatedVideosContainer.prepend(elements.episodeSelectorContainer);
                     }
-                    elements.seasonSelector.style.display = 'block';
-                    content.Seasons.forEach(season => { /* ... render season card ... */
-                        const seasonCard = document.createElement('div');
-                        seasonCard.className = 'season-card';
-                        seasonCard.innerHTML = `
-                            <img src="${season.SeasonPoster || content.Thumbnail}" alt="Season ${season.Season}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE_URL}';">
-                            <div class="season-info">
-                                <h4>Season ${season.Season}</h4>
-                            </div>
-                        `;
-                        seasonCard.addEventListener('click', () => {
-                            openSeason(season);
+
+                    // Fetch season and episode data
+                    fetch(`api/series_details.php?series_id=${content.id}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            elements.seasonsGrid.innerHTML = ''; // Clear spinner
+                            if (data.success && data.seasons && data.seasons.length > 0) {
+                                content.Seasons = data.seasons; // Attach seasons to the content object
+
+                                content.Seasons.forEach(season => {
+                                    const seasonCard = document.createElement('div');
+                                    seasonCard.className = 'season-card';
+                                    seasonCard.innerHTML = `
+                                        <img src="${season.SeasonPoster || content.Thumbnail}" alt="Season ${season.Season}" onerror="this.onerror=null; this.src='${PLACEHOLDER_IMAGE_URL}';">
+                                        <div class="season-info">
+                                            <h4>Season ${season.Season}</h4>
+                                        </div>
+                                    `;
+                                    seasonCard.addEventListener('click', () => openSeason(season));
+                                    elements.seasonsGrid.appendChild(seasonCard);
+                                });
+                                // Open the first season by default
+                                openSeason(content.Seasons[0]);
+                            } else {
+                                elements.seasonsGrid.innerHTML = '<p>No seasons found for this series.</p>';
+                                updateNavigationButtonsState(); // Hide episode nav buttons
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching series details:', error);
+                            elements.seasonsGrid.innerHTML = '<p>Could not load season data. Please try again later.</p>';
                         });
-                        elements.seasonsGrid.appendChild(seasonCard);
-                    });
-                    if (content.Seasons.length > 0) {
-                        openSeason(content.Seasons[0]); // This calls playEpisode -> updateNavigationButtonsState
-                    } else {
-                        updateNavigationButtonsState(); // Hide buttons if no seasons
+                } else {
+                    // This is a movie or live tv
+                    elements.seasonSelector.style.display = 'none';
+                    elements.episodeSelectorContainer.style.display = 'none';
+
+                    if (content.type === 'movie' && content.id) {
+                         updatePlayerSource(content.id, 'movie');
+                    } else if (content.type === 'live' && content.Servers && content.Servers.length > 0) {
+                        // For live TV, the server URL is already in the main data
+                        playUrl(content.Servers[0].url, content.Servers);
                     }
-                } else { // Movie or Live TV
-                    updateNavigationButtonsState(); // Hide episode buttons for non-series
+                    updateNavigationButtonsState(); // Hide episode buttons for non-series content
                 }
 
                 // Render related content
@@ -4436,7 +4417,7 @@
             window.scrollTo(0, 0);
 
             // --- Correct Event Listener Setup for Checkboxes ---
-            updateLikeDislikeUI(content.Title);
+            updateLikeDislikeUI(content.id, content.type === 'series' ? 'tv_series' : 'movie');
 
             // Remove old listeners and add new ones to prevent duplicates.
             // The 'change' event is used for checkboxes.
@@ -6756,50 +6737,55 @@ async function switchToServer(server, allServers) {
         }
         
         // Enhanced player source update with DRM awareness
-        async function updatePlayerSource(servers) {
+        async function updatePlayerSource(contentId, contentType) {
             if (!playerInstance) return;
 
-            if (servers && servers.length > 0) {
-                // Use DRM-aware server selection
-                const optimalServer = selectOptimalServer(servers);
-                
-                if (optimalServer) {
-                    // Check for special URLs first
-                    if (isVidsrcUrl(optimalServer.url) || isVidjoyUrl(optimalServer.url) || isVidsrcMeUrl(optimalServer.url) || isVidsrcToUrl(optimalServer.url) || isVidsrcXyzUrl(optimalServer.url) || isGoDrivePlayerUrl(optimalServer.url) || isVidLinkProUrl(optimalServer.url) || is2EmbedUrl(optimalServer.url) || isEmbedSuUrl(optimalServer.url) || isAutoEmbedUrl(optimalServer.url) || isVideasyUrl(optimalServer.url) || isMegaNzUrl(optimalServer.url) || isGoogleDriveUrl(optimalServer.url)) {
-                        playUrl(optimalServer.url, servers);
-                        return;
+            const response = await fetch(`api/servers.php?content_id=${contentId}&content_type=${contentType}`);
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.servers.length > 0) {
+                    const servers = result.servers;
+                    // Use DRM-aware server selection
+                    const optimalServer = selectOptimalServer(servers);
+                    
+                    if (optimalServer) {
+                        // Check for special URLs first
+                        if (isVidsrcUrl(optimalServer.url) || isVidjoyUrl(optimalServer.url) || isVidsrcMeUrl(optimalServer.url) || isVidsrcToUrl(optimalServer.url) || isVidsrcXyzUrl(optimalServer.url) || isGoDrivePlayerUrl(optimalServer.url) || isVidLinkProUrl(optimalServer.url) || is2EmbedUrl(optimalServer.url) || isEmbedSuUrl(optimalServer.url) || isAutoEmbedUrl(optimalServer.url) || isVideasyUrl(optimalServer.url) || isMegaNzUrl(optimalServer.url) || isGoogleDriveUrl(optimalServer.url)) {
+                            playUrl(optimalServer.url, servers);
+                            return;
+                        }
+
+                        // Handle MPD files with enhanced DRM support
+                        if (optimalServer.url.includes('.mpd')) {
+                            await handleMPDStream(optimalServer.url, servers);
+                            return;
+                        }
+
+                        // Handle regular video sources
+                        const sources = servers.map(server => ({
+                            src: server.url,
+                            size: parseInt(server.name?.replace(/\D/g, '') || '0'),
+                            type: server.url.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4'
+                        }));
+
+                        playerInstance.source = {
+                            type: 'video',
+                            sources: sources,
+                        };
+
+                        // Ensure stretch button persists after source change
+                        addStretchButtonToPlayer();
+
+                        // Update in-page server dropdown for multiple servers
+                        updateServerDropdown(servers, optimalServer);
+
+                        // Add error handling for automatic server switching
+                        playerInstance.on('error', async (event) => {
+                            console.log('Player error detected, trying next server...');
+                            const currentIndex = servers.findIndex(s => s.url === optimalServer.url);
+                            await tryNextServer(servers, currentIndex);
+                        });
                     }
-                    
-                    // Handle MPD files with enhanced DRM support
-                    if (optimalServer.url.includes('.mpd')) {
-                        await handleMPDStream(optimalServer.url, servers);
-                        return;
-                    }
-                    
-                    // Handle regular video sources
-                    const sources = servers.map(server => ({
-                        src: server.url,
-                        size: parseInt(server.name?.replace(/\D/g, '') || '0'),
-                        type: server.url.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4'
-                    }));
-                    
-                    playerInstance.source = {
-                        type: 'video',
-                        sources: sources,
-                    };
-                    
-                    // Ensure stretch button persists after source change
-                    addStretchButtonToPlayer();
-                    
-                    // Update in-page server dropdown for multiple servers
-                    updateServerDropdown(servers, optimalServer);
-                    
-                    // Add error handling for automatic server switching
-                    playerInstance.on('error', async (event) => {
-                        console.log('Player error detected, trying next server...');
-                        const currentIndex = servers.findIndex(s => s.url === optimalServer.url);
-                        await tryNextServer(servers, currentIndex);
-                    });
                 }
             }
         }
@@ -6843,8 +6829,8 @@ async function switchToServer(server, allServers) {
             elements.viewerDescription.textContent = episode.Description || currentSeries.Description;
 
             // Update quality selector
-            if (episode.Servers) {
-                updatePlayerSource(episode.Servers);
+            if (episode.id) {
+                updatePlayerSource(episode.id, 'episode');
             }
 
             // Ensure the episode selector reflects the current episode
@@ -8028,22 +8014,19 @@ async function switchToServer(server, allServers) {
         // --- Like/Dislike Functionality ---
         const INTERACTIONS_KEY = 'cineCrazeInteractions';
 
-        function getVideoInteractions(contentId) {
-            const allInteractions = JSON.parse(localStorage.getItem(INTERACTIONS_KEY)) || {};
-            // Ensure likes and dislikes are numbers, default to 0 if not present or invalid
-            const likes = parseInt(allInteractions[contentId]?.likes, 10);
-            const dislikes = parseInt(allInteractions[contentId]?.dislikes, 10);
-            return {
-                likes: isNaN(likes) ? 0 : likes,
-                dislikes: isNaN(dislikes) ? 0 : dislikes,
-                userAction: allInteractions[contentId]?.userAction || null
-            };
-        }
-
-        function saveVideoInteractions(contentId, interactionData) {
-            const allInteractions = JSON.parse(localStorage.getItem(INTERACTIONS_KEY)) || {};
-            allInteractions[contentId] = interactionData;
-            localStorage.setItem(INTERACTIONS_KEY, JSON.stringify(allInteractions));
+        async function getVideoInteractions(contentId, contentType) {
+            const response = await fetch(`api/like.php?content_id=${contentId}&content_type=${contentType}`);
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    return {
+                        likes: result.likes,
+                        dislikes: result.dislikes,
+                        userAction: null // This will be handled by the UI state
+                    };
+                }
+            }
+            return { likes: 0, dislikes: 0, userAction: null };
         }
 
         function formatCount(count) {
@@ -8052,7 +8035,7 @@ async function switchToServer(server, allServers) {
             return count.toString();
         }
 
-        function updateLikeDislikeUI(contentId) {
+        async function updateLikeDislikeUI(contentId, contentType) {
             const likeCheckbox = document.getElementById('like-checkbox');
             const dislikeCheckbox = document.getElementById('dislike-checkbox');
             const likeCountSpan = document.getElementById('like-count-span');
@@ -8060,46 +8043,60 @@ async function switchToServer(server, allServers) {
 
             if (!likeCheckbox || !dislikeCheckbox || !likeCountSpan || !dislikeCountSpan) return;
 
-            const interactions = getVideoInteractions(contentId);
+            const interactions = await getVideoInteractions(contentId, contentType);
             likeCountSpan.textContent = formatCount(interactions.likes);
             dislikeCountSpan.textContent = formatCount(interactions.dislikes);
 
-            likeCheckbox.checked = interactions.userAction === 'liked';
-            dislikeCheckbox.checked = interactions.userAction === 'disliked';
+            // The userAction is not available from the API, so we'll have to manage this state on the client side
+            // For now, we'll just update the counts.
         }
 
-        function handleLike() {
-            if (!currentContentInfo || !currentContentInfo.Title) return;
-            const contentId = currentContentInfo.Title;
-            let interactions = getVideoInteractions(contentId);
+        async function handleLike() {
+            if (!currentContentInfo || !currentContentInfo.id) return;
+            const contentId = currentContentInfo.id;
+            const contentType = currentContentInfo.type === 'series' ? 'tv_series' : 'movie';
 
-            if (interactions.userAction === 'liked') {
-                interactions.likes--;
-                interactions.userAction = null;
-            } else {
-                if (interactions.userAction === 'disliked') interactions.dislikes--;
-                interactions.likes++;
-                interactions.userAction = 'liked';
+            const formData = new FormData();
+            formData.append('content_id', contentId);
+            formData.append('content_type', contentType);
+            formData.append('action', 'like');
+
+            const response = await fetch('api/like.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    // Update the UI
+                    updateLikeDislikeUI(contentId, contentType);
+                }
             }
-            saveVideoInteractions(contentId, interactions);
-            updateLikeDislikeUI(contentId);
         }
 
-        function handleDislike() {
-            if (!currentContentInfo || !currentContentInfo.Title) return;
-            const contentId = currentContentInfo.Title;
-            let interactions = getVideoInteractions(contentId);
+        async function handleDislike() {
+            if (!currentContentInfo || !currentContentInfo.id) return;
+            const contentId = currentContentInfo.id;
+            const contentType = currentContentInfo.type === 'series' ? 'tv_series' : 'movie';
 
-            if (interactions.userAction === 'disliked') {
-                interactions.dislikes--;
-                interactions.userAction = null;
-            } else {
-                if (interactions.userAction === 'liked') interactions.likes--;
-                interactions.dislikes++;
-                interactions.userAction = 'disliked';
+            const formData = new FormData();
+            formData.append('content_id', contentId);
+            formData.append('content_type', contentType);
+            formData.append('action', 'dislike');
+
+            const response = await fetch('api/like.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    // Update the UI
+                    updateLikeDislikeUI(contentId, contentType);
+                }
             }
-            saveVideoInteractions(contentId, interactions);
-            updateLikeDislikeUI(contentId);
         }
         // --- End Like/Dislike Functionality ---
 
