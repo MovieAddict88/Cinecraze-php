@@ -3675,7 +3675,7 @@
             return mergeCineDataSegments(segments);
         }
         
-        // Enhanced data fetching with IndexedDB caching
+        // Enhanced data fetching with IndexedDB caching, now pointing to the PHP API
         async function fetchData() {
             let db;
             try {
@@ -3685,79 +3685,40 @@
                 if (cachedData) {
                     cineData = cachedData;
                     console.log("✅ Loaded data from IndexedDB cache");
-                    return; // Exit early if we have cached data
+                    return;
                 }
 
-                console.log("ℹ️ No cache found in IndexedDB. Fetching from network...");
+                console.log("ℹ️ No cache found. Fetching from API...");
                 elements.progressBarContainer.style.display = 'block';
-                elements.loadingSpinner.style.display = 'none';
+                elements.progressBarText.textContent = 'Loading content from server...';
+                elements.loadingSpinner.style.display = 'block';
+
+                const apiUrl = 'api/content.php';
                 
-                const primaryUrl = "https://github.com/MovieAddict88/Movie-Source/raw/main/playlist.json";
-                const fallbackUrls = [
-                    "https://raw.githubusercontent.com/MovieAddict88/Movie-Source/main/playlist.json",
-                    "https://cdn.jsdelivr.net/gh/MovieAddict88/Movie-Source@main/playlist.json",
-                    "./playlist.json",
-                    "./data/playlist.json"
-                ];
-                
-                const allCandidateUrls = [primaryUrl, ...fallbackUrls];
-                for (const candidate of allCandidateUrls) {
-                    try {
-                        console.log(`🔎 Trying segmented playlists from: ${getBasePathFromUrl(candidate)}`);
-                        const segmented = await tryFetchSegmented(candidate);
-                        if (segmented && segmented.Categories && segmented.Categories.length > 0) {
-                            cineData = segmented;
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached segmented data from base: ${getBasePathFromUrl(candidate)}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Segmented fetch failed for ${candidate}`, err);
-                    }
-                    try {
-                        console.log(`🔄 Trying monolithic playlist: ${candidate}`);
-                        elements.progressBarText.textContent = `Trying monolithic playlist...`;
-                        const response = await fetch(withCacheBuster(candidate));
-                        if (response.ok) {
-                            cineData = await response.json();
-                            await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                            console.log(`✅ Loaded and cached data from: ${candidate}`);
-                            return;
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Monolithic fetch failed for ${candidate}`, err);
-                    }
+                const response = await fetch(withCacheBuster(apiUrl));
+                if (response.ok) {
+                    cineData = await response.json();
+                    await dbUtil.set(db, PLAYLIST_KEY, cineData);
+                    console.log(`✅ Loaded and cached data from: ${apiUrl}`);
+                    return;
                 }
                 
-                throw new Error("All data sources failed");
+                throw new Error("Failed to fetch data from API.");
                 
             } catch (err) {
-                console.error("❌ All data sources failed:", err);
-                
+                console.error("❌ Data loading failed:", err);
                 const errorMessage = document.createElement('div');
                 errorMessage.style.cssText = `
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: var(--youtube-gray);
-                    padding: 20px;
-                    border-radius: 8px;
-                    text-align: center;
-                    z-index: 10000;
-                    max-width: 400px;
+                    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                    background: var(--youtube-gray); padding: 20px; border-radius: 8px; text-align: center;
+                    z-index: 10000; max-width: 400px;
                 `;
                 errorMessage.innerHTML = `
                     <h3>⚠️ Data Loading Failed</h3>
-                    <p>Unable to load content data. Please check your internet connection and try again.</p>
-                    <button onclick="this.parentElement.remove(); window.location.reload();" style="
-                        background: var(--primary);
-                        color: white;
-                        border: none;
-                        padding: 10px 20px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        margin-top: 10px;
+                    <p>Unable to load content from the server. Please ensure the backend is set up correctly and try again.</p>
+                    <button onclick="window.location.reload();" style="
+                        background: var(--primary); color: white; border: none; padding: 10px 20px;
+                        border-radius: 4px; cursor: pointer; margin-top: 10px;
                     ">Retry</button>
                 `;
                 document.body.appendChild(errorMessage);
@@ -8025,25 +7986,45 @@ async function switchToServer(server, allServers) {
         }
         // --- End Share Functionality ---
 
-        // --- Like/Dislike Functionality ---
-        const INTERACTIONS_KEY = 'cineCrazeInteractions';
+        // --- Server-Side Interaction Logic ---
+        const USER_INTERACTION_STATE = 'cineCrazeUserInteractionState';
 
-        function getVideoInteractions(contentId) {
-            const allInteractions = JSON.parse(localStorage.getItem(INTERACTIONS_KEY)) || {};
-            // Ensure likes and dislikes are numbers, default to 0 if not present or invalid
-            const likes = parseInt(allInteractions[contentId]?.likes, 10);
-            const dislikes = parseInt(allInteractions[contentId]?.dislikes, 10);
-            return {
-                likes: isNaN(likes) ? 0 : likes,
-                dislikes: isNaN(dislikes) ? 0 : dislikes,
-                userAction: allInteractions[contentId]?.userAction || null
-            };
+        function getLocalUserAction(contentId) {
+            const allStates = JSON.parse(localStorage.getItem(USER_INTERACTION_STATE)) || {};
+            return allStates[contentId] || null; // 'liked' or 'disliked'
         }
 
-        function saveVideoInteractions(contentId, interactionData) {
-            const allInteractions = JSON.parse(localStorage.getItem(INTERACTIONS_KEY)) || {};
-            allInteractions[contentId] = interactionData;
-            localStorage.setItem(INTERACTIONS_KEY, JSON.stringify(allInteractions));
+        function setLocalUserAction(contentId, action) {
+            const allStates = JSON.parse(localStorage.getItem(USER_INTERACTION_STATE)) || {};
+            if (action) {
+                allStates[contentId] = action;
+            } else {
+                delete allStates[contentId];
+            }
+            localStorage.setItem(USER_INTERACTION_STATE, JSON.stringify(allStates));
+        }
+
+        async function postInteraction(action, content) {
+            try {
+                const response = await fetch('api/interactions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: action,
+                        content_id: content.id,
+                        content_type: content.type
+                    })
+                });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const result = await response.json();
+                if (result.status === 'success') {
+                    updateInteractionUI(result.counts);
+                }
+            } catch (error) {
+                console.error('Failed to post interaction:', error);
+            }
         }
 
         function formatCount(count) {
@@ -8052,56 +8033,72 @@ async function switchToServer(server, allServers) {
             return count.toString();
         }
 
-        function updateLikeDislikeUI(contentId) {
-            const likeCheckbox = document.getElementById('like-checkbox');
-            const dislikeCheckbox = document.getElementById('dislike-checkbox');
+        function updateInteractionUI(counts) {
             const likeCountSpan = document.getElementById('like-count-span');
             const dislikeCountSpan = document.getElementById('dislike-count-span');
+            const viewsElement = document.getElementById('viewer-views');
 
-            if (!likeCheckbox || !dislikeCheckbox || !likeCountSpan || !dislikeCountSpan) return;
+            if (counts.likes !== undefined) likeCountSpan.textContent = formatCount(counts.likes);
+            if (counts.dislikes !== undefined) dislikeCountSpan.textContent = formatCount(counts.dislikes);
+            if (counts.views !== undefined) viewsElement.innerHTML = `<i class="fas fa-eye"></i> ${formatCount(counts.views)} views`;
+        }
 
-            const interactions = getVideoInteractions(contentId);
-            likeCountSpan.textContent = formatCount(interactions.likes);
-            dislikeCountSpan.textContent = formatCount(interactions.dislikes);
-
-            likeCheckbox.checked = interactions.userAction === 'liked';
-            dislikeCheckbox.checked = interactions.userAction === 'disliked';
+        async function fetchInitialCounts(content) {
+            const likeCheckbox = document.getElementById('like-checkbox');
+            const dislikeCheckbox = document.getElementById('dislike-checkbox');
+            likeCheckbox.checked = getLocalUserAction(content.id) === 'liked';
+            dislikeCheckbox.checked = getLocalUserAction(content.id) === 'disliked';
+            await postInteraction('get', content);
         }
 
         function handleLike() {
-            if (!currentContentInfo || !currentContentInfo.Title) return;
-            const contentId = currentContentInfo.Title;
-            let interactions = getVideoInteractions(contentId);
+            if (!currentContentInfo || !currentContentInfo.id) return;
+            const contentId = currentContentInfo.id;
+            const currentAction = getLocalUserAction(contentId);
 
-            if (interactions.userAction === 'liked') {
-                interactions.likes--;
-                interactions.userAction = null;
+            if (currentAction === 'liked') {
+                // User is unliking
+                postInteraction('unlike', currentContentInfo);
+                setLocalUserAction(contentId, null);
             } else {
-                if (interactions.userAction === 'disliked') interactions.dislikes--;
-                interactions.likes++;
-                interactions.userAction = 'liked';
+                // User is liking
+                if (currentAction === 'disliked') {
+                    postInteraction('undislike', currentContentInfo);
+                }
+                postInteraction('like', currentContentInfo);
+                setLocalUserAction(contentId, 'liked');
             }
-            saveVideoInteractions(contentId, interactions);
+             // Immediately update UI for responsiveness
             updateLikeDislikeUI(contentId);
         }
 
         function handleDislike() {
-            if (!currentContentInfo || !currentContentInfo.Title) return;
-            const contentId = currentContentInfo.Title;
-            let interactions = getVideoInteractions(contentId);
+             if (!currentContentInfo || !currentContentInfo.id) return;
+            const contentId = currentContentInfo.id;
+            const currentAction = getLocalUserAction(contentId);
 
-            if (interactions.userAction === 'disliked') {
-                interactions.dislikes--;
-                interactions.userAction = null;
+            if (currentAction === 'disliked') {
+                // User is undisliking
+                postInteraction('undislike', currentContentInfo);
+                setLocalUserAction(contentId, null);
             } else {
-                if (interactions.userAction === 'liked') interactions.likes--;
-                interactions.dislikes++;
-                interactions.userAction = 'disliked';
+                // User is disliking
+                if (currentAction === 'liked') {
+                    postInteraction('unlike', currentContentInfo);
+                }
+                postInteraction('dislike', currentContentInfo);
+                setLocalUserAction(contentId, 'disliked');
             }
-            saveVideoInteractions(contentId, interactions);
+             // Immediately update UI for responsiveness
             updateLikeDislikeUI(contentId);
         }
-        // --- End Like/Dislike Functionality ---
+
+        function incrementViewCount() {
+            if (!currentContentInfo || !currentContentInfo.id) return;
+            postInteraction('view', currentContentInfo);
+        }
+        // --- End Server-Side Interaction Logic ---
+
 
         // --- Watch Later Functionality ---
         async function toggleWatchLater(content, buttonElement) {
@@ -8152,26 +8149,6 @@ async function switchToServer(server, allServers) {
             await renderContent('watch-later');
         }
         // --- End Watch Later Functionality ---
-
-        // --- View Counter Functionality ---
-        const VIEW_COUNTS_KEY = 'cineCrazeViewCounts';
-
-        function getViewCounts() {
-            return JSON.parse(localStorage.getItem(VIEW_COUNTS_KEY)) || {};
-        }
-
-        function incrementViewCount(contentId) {
-            if (!contentId) return;
-            const viewCounts = getViewCounts();
-            viewCounts[contentId] = (viewCounts[contentId] || 0) + 1;
-            localStorage.setItem(VIEW_COUNTS_KEY, JSON.stringify(viewCounts));
-
-            // Update UI
-            const viewsElement = document.getElementById('viewer-views');
-            if (viewsElement) {
-                viewsElement.innerHTML = `<i class="fas fa-eye"></i> ${formatCount(viewCounts[contentId])} views`;
-            }
-        }
         // --- End View Counter Functionality ---
 
         // --- Stretch Functionality ---
