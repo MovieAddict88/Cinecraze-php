@@ -115,8 +115,12 @@ $conn->close();
                                 <input type="hidden" name="delete_type" value="<?php echo $item['type']; ?>">
                                 <button type="submit" class="btn btn-danger btn-small">Delete</button>
                             </form>
-                            <a href="#" class="btn btn-secondary btn-small">Edit</a>
-                            <a href="#" class="btn btn-warning btn-small">Servers</a>
+                            <a href="edit.php?type=<?php echo $item['type']; ?>&id=<?php echo $item['id']; ?>" class="btn btn-secondary btn-small">Edit</a>
+                            <?php if ($item['type'] === 'movie'): ?>
+                                <a href="manage_servers.php?type=movie&id=<?php echo $item['id']; ?>" class="btn btn-warning btn-small">Servers</a>
+                            <?php else: ?>
+                                <a href="#" class="btn btn-warning btn-small" disabled title="Server management for series is coming soon.">Servers</a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

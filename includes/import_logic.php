@@ -25,13 +25,39 @@ function importJsonData($data, $conn) {
         $stmt_episode = $conn->prepare("INSERT INTO episodes (season_id, episode_number, title, description, still_path) VALUES (?, ?, ?, ?, ?)");
         $stmt_server = $conn->prepare("INSERT INTO servers (content_id, content_type, server_name, server_url) VALUES (?, ?, ?, ?)");
 
-        foreach ($data['Categories'] as $category) {
-            $mainCategory = $category['MainCategory'];
+        // Check if the root is a 'Categories' array or just an array of entries
+        $entries_list = isset($data['Categories']) ? $data['Categories'] : [['MainCategory' => 'Unknown', 'Entries' => $data]];
+
+        foreach ($entries_list as $category) {
+            $mainCategory = isset($category['MainCategory']) ? $category['MainCategory'] : 'Unknown';
+
+            if (!isset($category['Entries']) || !is_array($category['Entries'])) continue;
 
             foreach ($category['Entries'] as $entry) {
-                // --- MOVIES ---
-                if ($mainCategory === 'Movies') {
-                    $release_date = !empty($entry['Year']) ? $entry['Year'] . '-01-01' : null;
+                // Determine content type: prioritize 'type' key in entry, fallback to MainCategory
+                $type = 'unknown';
+                if (isset($entry['type'])) {
+                    $type = strtolower($entry['type']);
+                } else {
+                    if ($mainCategory === 'Movies' || $mainCategory === 'Live TV') {
+                        $type = 'movie';
+                    } elseif ($mainCategory === 'TV Series') {
+                        $type = 'series';
+                    }
+                }
+
+                // Sanitize common null/empty values
+                $entry['Title'] = isset($entry['Title']) ? $entry['Title'] : 'Untitled';
+                $entry['Description'] = isset($entry['Description']) ? $entry['Description'] : '';
+                $entry['Poster'] = isset($entry['Poster']) ? $entry['Poster'] : '';
+                $entry['Rating'] = isset($entry['Rating']) ? (float)$entry['Rating'] : 0.0;
+                $entry['parentalRating'] = isset($entry['parentalRating']) ? $entry['parentalRating'] : 'N/A';
+                $entry['Year'] = isset($entry['Year']) ? $entry['Year'] : null;
+
+
+                // --- MOVIES or LIVE TV ---
+                if ($type === 'movie' || $type === 'live' || $mainCategory === 'Live TV') {
+                    $release_date = !empty($entry['Year']) ? $entry['Year'] . '-01-01' : date("Y-m-d");
                     $stmt_movie->bind_param("ssssds", $entry['Title'], $entry['Description'], $entry['Poster'], $release_date, $entry['Rating'], $entry['parentalRating']);
                     $stmt_movie->execute();
                     $movie_id = $conn->insert_id;
@@ -40,7 +66,9 @@ function importJsonData($data, $conn) {
                     if (isset($entry['Servers']) && is_array($entry['Servers'])) {
                         foreach ($entry['Servers'] as $server) {
                             $content_type = 'movie';
-                            $stmt_server->bind_param("isss", $movie_id, $content_type, $server['name'], $server['url']);
+                            $server_name = isset($server['name']) ? $server['name'] : 'Server';
+                            $server_url = isset($server['url']) ? $server['url'] : '';
+                            $stmt_server->bind_param("isss", $movie_id, $content_type, $server_name, $server_url);
                             $stmt_server->execute();
                             $servers_imported++;
                         }
@@ -48,7 +76,7 @@ function importJsonData($data, $conn) {
                 }
 
                 // --- TV SERIES ---
-                if ($mainCategory === 'TV Series') {
+                elseif ($type === 'series') {
                     $first_air_date = !empty($entry['Year']) ? $entry['Year'] . '-01-01' : null;
                     $stmt_series->bind_param("ssssds", $entry['Title'], $entry['Description'], $entry['Poster'], $first_air_date, $entry['Rating'], $entry['parentalRating']);
                     $stmt_series->execute();
@@ -57,14 +85,19 @@ function importJsonData($data, $conn) {
 
                     if (isset($entry['Seasons']) && is_array($entry['Seasons'])) {
                         foreach ($entry['Seasons'] as $season) {
-                            $stmt_season->bind_param("iiss", $series_id, $season['Season'], $season['Title'], $season['SeasonPoster']);
+                            $season_title = isset($season['Title']) ? $season['Title'] : 'Season ' . $season['Season'];
+                            $season_poster = isset($season['SeasonPoster']) ? $season['SeasonPoster'] : $entry['Poster'];
+                            $stmt_season->bind_param("iiss", $series_id, $season['Season'], $season_title, $season_poster);
                             $stmt_season->execute();
                             $season_id = $conn->insert_id;
                             $seasons_imported++;
 
                             if (isset($season['Episodes']) && is_array($season['Episodes'])) {
                                 foreach ($season['Episodes'] as $episode) {
-                                    $stmt_episode->bind_param("iisss", $season_id, $episode['Episode'], $episode['Title'], $episode['Description'], $episode['Thumbnail']);
+                                    $episode_title = isset($episode['Title']) ? $episode['Title'] : 'Episode ' . $episode['Episode'];
+                                    $episode_desc = isset($episode['Description']) ? $episode['Description'] : '';
+                                    $episode_thumb = isset($episode['Thumbnail']) ? $episode['Thumbnail'] : '';
+                                    $stmt_episode->bind_param("iisss", $season_id, $episode['Episode'], $episode_title, $episode_desc, $episode_thumb);
                                     $stmt_episode->execute();
                                     $episode_id = $conn->insert_id;
                                     $episodes_imported++;
@@ -72,33 +105,15 @@ function importJsonData($data, $conn) {
                                     if (isset($episode['Servers']) && is_array($episode['Servers'])) {
                                         foreach ($episode['Servers'] as $server) {
                                             $content_type = 'episode';
-                                            $stmt_server->bind_param("isss", $episode_id, $content_type, $server['name'], $server['url']);
+                                            $server_name = isset($server['name']) ? $server['name'] : 'Server';
+                                            $server_url = isset($server['url']) ? $server['url'] : '';
+                                            $stmt_server->bind_param("isss", $episode_id, $content_type, $server_name, $server_url);
                                             $stmt_server->execute();
                                             $servers_imported++;
                                         }
                                     }
                                 }
                             }
-                        }
-                    }
-                }
-                 // --- LIVE TV (Modeled as Movies) ---
-                if ($mainCategory === 'Live TV') {
-                    // For now, we treat Live TV as a movie with a specific genre (to be added)
-                    $release_date = date("Y-m-d"); // Use current date for live channels
-                    $rating = 0;
-                    $parental = 'N/A';
-                    $stmt_movie->bind_param("ssssds", $entry['Title'], $entry['Description'], $entry['Poster'], $release_date, $rating, $parental);
-                    $stmt_movie->execute();
-                    $movie_id = $conn->insert_id;
-                    $movies_imported++; // Count as a movie
-
-                    if (isset($entry['Servers']) && is_array($entry['Servers'])) {
-                        foreach ($entry['Servers'] as $server) {
-                            $content_type = 'movie';
-                            $stmt_server->bind_param("isss", $movie_id, $content_type, $server['name'], $server['url']);
-                            $stmt_server->execute();
-                            $servers_imported++;
                         }
                     }
                 }
