@@ -1,4 +1,110 @@
-      <!DOCTYPE html>
+<?php
+require_once 'includes/config.php';
+
+$conn = db_connect();
+$all_content = null;
+
+if ($conn) {
+    // This is a simplified version of the logic from api/content.php
+    // In a real application, you would abstract this into a shared function.
+    $cineData = ['Categories' => []];
+    $movies_category = ['MainCategory' => 'Movies', 'SubCategories' => [], 'Entries' => []];
+    $livetv_category = ['MainCategory' => 'Live TV', 'SubCategories' => [], 'Entries' => []];
+    $series_category = ['MainCategory' => 'TV Series', 'SubCategories' => [], 'Entries' => []];
+
+    // Fetch all servers first and map them by content ID for efficiency
+    $all_servers = [];
+    $sql_servers = "SELECT * FROM servers";
+    $result_servers = $conn->query($sql_servers);
+    while($row = $result_servers->fetch_assoc()) {
+        $key = $row['content_type'] . '_' . $row['content_id'];
+        if (!isset($all_servers[$key])) {
+            $all_servers[$key] = [];
+        }
+        $all_servers[$key][] = ['name' => $row['server_name'], 'url' => $row['server_url']];
+    }
+
+    // Fetch Movies
+    $sql_movies = "SELECT * FROM movies ORDER BY release_date DESC";
+    $result_movies = $conn->query($sql_movies);
+    while ($movie = $result_movies->fetch_assoc()) {
+        $servers_key = 'movie_' . $movie['id'];
+        $entry = [
+            'id' => $movie['id'], // Pass ID for interactions
+            'type' => 'movie', // Pass type for interactions
+            'Title' => $movie['title'],
+            'Description' => $movie['description'],
+            'Poster' => $movie['poster_path'],
+            'Thumbnail' => $movie['poster_path'],
+            'Rating' => (float)$movie['rating'],
+            'Duration' => $movie['runtime'] > 0 ? gmdate("H:i:s", $movie['runtime'] * 60) : 'N/A',
+            'Year' => (int)date('Y', strtotime($movie['release_date'])),
+            'parentalRating' => $movie['parental_rating'],
+            'Servers' => isset($all_servers[$servers_key]) ? $all_servers[$servers_key] : []
+        ];
+        if (strpos(strtolower($movie['title']), 'live') !== false || strpos(strtolower($movie['description']), 'live') !== false) {
+             $livetv_category['Entries'][] = $entry;
+        } else {
+             $movies_category['Entries'][] = $entry;
+        }
+    }
+
+    // Fetch TV Series
+    $sql_series = "SELECT * FROM tv_series ORDER BY first_air_date DESC";
+    $result_series = $conn->query($sql_series);
+    while ($series = $result_series->fetch_assoc()) {
+        $series_entry = [
+            'id' => $series['id'],
+            'type' => 'series',
+            'Title' => $series['title'],
+            'Description' => $series['description'],
+            'Poster' => $series['poster_path'],
+            'Thumbnail' => $series['poster_path'],
+            'Rating' => (float)$series['rating'],
+            'Year' => (int)date('Y', strtotime($series['first_air_date'])),
+            'parentalRating' => $series['parental_rating'],
+            'Seasons' => []
+        ];
+
+        $sql_seasons = "SELECT * FROM seasons WHERE series_id = {$series['id']} ORDER BY season_number ASC";
+        $result_seasons = $conn->query($sql_seasons);
+        while($season = $result_seasons->fetch_assoc()) {
+            $season_entry = [
+                'Season' => (int)$season['season_number'],
+                'SeasonPoster' => $season['poster_path'] ?: $series['poster_path'],
+                'Episodes' => []
+            ];
+
+            $sql_episodes = "SELECT * FROM episodes WHERE season_id = {$season['id']} ORDER BY episode_number ASC";
+            $result_episodes = $conn->query($sql_episodes);
+            while($episode = $result_episodes->fetch_assoc()) {
+                $servers_key = 'episode_' . $episode['id'];
+                $episode_entry = [
+                    'id' => $episode['id'],
+                    'type' => 'episode',
+                    'Episode' => (int)$episode['episode_number'],
+                    'Title' => $episode['title'],
+                    'Duration' => $episode['runtime'] > 0 ? gmdate("H:i:s", $episode['runtime'] * 60) : 'N/A',
+                    'Description' => $episode['description'],
+                    'Thumbnail' => $episode['still_path'],
+                    'Servers' => isset($all_servers[$servers_key]) ? $all_servers[$servers_key] : []
+                ];
+                $season_entry['Episodes'][] = $episode_entry;
+            }
+            $series_entry['Seasons'][] = $season_entry;
+        }
+        $series_category['Entries'][] = $series_entry;
+    }
+
+    if (!empty($livetv_category['Entries'])) $cineData['Categories'][] = $livetv_category;
+    if (!empty($movies_category['Entries'])) $cineData['Categories'][] = $movies_category;
+    if (!empty($series_category['Entries'])) $cineData['Categories'][] = $series_category;
+
+    $all_content = $cineData;
+    $conn->close();
+}
+?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -3160,6 +3266,9 @@
     <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.7/shaka-player.compiled.js"></script>
     <script>
+        // Pre-load data from PHP
+        const preloadedData = <?php echo json_encode($all_content, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
         if ('scrollRestoration' in history) {
             history.scrollRestoration = 'manual';
         }
@@ -3357,7 +3466,7 @@
         // TMDB API removed - using local data only
         
         // SAMPLE DATA - Replace this with your actual data source
-        let cineData = null;
+        let cineData = preloadedData || null; // Use pre-loaded data
         let cachedContent = [];
         let currentPage = 1;
         let totalPages = 0;
@@ -3675,58 +3784,36 @@
             return mergeCineDataSegments(segments);
         }
         
-        // Enhanced data fetching with IndexedDB caching, now pointing to the PHP API
+        // Data is now pre-loaded, so this function is much simpler.
+        // It ensures the rest of the app that depends on this Promise still works.
         async function fetchData() {
-            let db;
-            try {
-                db = await dbUtil.open();
-                const cachedData = await dbUtil.get(db, PLAYLIST_KEY);
-
-                if (cachedData) {
-                    cineData = cachedData;
-                    console.log("✅ Loaded data from IndexedDB cache");
-                    return;
+            return new Promise((resolve, reject) => {
+                if (cineData && cineData.Categories) {
+                    console.log("✅ Data was pre-loaded successfully via PHP.");
+                    // Hide loading indicators that might have been shown by default
+                    elements.progressBarContainer.style.display = 'none';
+                    elements.loadingSpinner.style.display = 'none';
+                    resolve();
+                } else {
+                    console.error("❌ Pre-loaded data is not available. Check PHP block.");
+                    const errorMessage = document.createElement('div');
+                    errorMessage.style.cssText = `
+                        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        background: var(--youtube-gray); padding: 20px; border-radius: 8px; text-align: center;
+                        z-index: 10000; max-width: 400px;
+                    `;
+                    errorMessage.innerHTML = `
+                        <h3>⚠️ Data Loading Failed</h3>
+                        <p>Could not load initial content from the server. Please ensure the database is set up correctly.</p>
+                        <a href="setup.php" style="
+                            display: inline-block; background: var(--primary); color: white; border: none; padding: 10px 20px;
+                            border-radius: 4px; cursor: pointer; margin-top: 10px; text-decoration: none;
+                        ">Run Setup</a>
+                    `;
+                    document.body.appendChild(errorMessage);
+                    reject("Pre-loaded data not found.");
                 }
-
-                console.log("ℹ️ No cache found. Fetching from API...");
-                elements.progressBarContainer.style.display = 'block';
-                elements.progressBarText.textContent = 'Loading content from server...';
-                elements.loadingSpinner.style.display = 'block';
-
-                const apiUrl = 'api/content.php';
-                
-                const response = await fetch(withCacheBuster(apiUrl));
-                if (response.ok) {
-                    cineData = await response.json();
-                    await dbUtil.set(db, PLAYLIST_KEY, cineData);
-                    console.log(`✅ Loaded and cached data from: ${apiUrl}`);
-                    return;
-                }
-                
-                throw new Error("Failed to fetch data from API.");
-                
-            } catch (err) {
-                console.error("❌ Data loading failed:", err);
-                const errorMessage = document.createElement('div');
-                errorMessage.style.cssText = `
-                    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                    background: var(--youtube-gray); padding: 20px; border-radius: 8px; text-align: center;
-                    z-index: 10000; max-width: 400px;
-                `;
-                errorMessage.innerHTML = `
-                    <h3>⚠️ Data Loading Failed</h3>
-                    <p>Unable to load content from the server. Please ensure the backend is set up correctly and try again.</p>
-                    <button onclick="window.location.reload();" style="
-                        background: var(--primary); color: white; border: none; padding: 10px 20px;
-                        border-radius: 4px; cursor: pointer; margin-top: 10px;
-                    ">Retry</button>
-                `;
-                document.body.appendChild(errorMessage);
-            } finally {
-                if (db) db.close();
-                elements.progressBarContainer.style.display = 'none';
-                elements.loadingSpinner.style.display = 'none';
-            }
+            });
         }
         
         // TMDB API function removed - using local data only
